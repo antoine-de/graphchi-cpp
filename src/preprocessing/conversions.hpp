@@ -66,6 +66,7 @@ namespace graphchi {
     /* Simple string to number parsers */
     static void VARIABLE_IS_NOT_USED parse(int &x, const char * s);
     static void VARIABLE_IS_NOT_USED parse(unsigned int &x, const char * s);
+    static void VARIABLE_IS_NOT_USED parse(unsigned long int &x, const char * s);
     static void VARIABLE_IS_NOT_USED parse(float &x, const char * s);
     static void VARIABLE_IS_NOT_USED parse(long &x, const char * s);
     static void VARIABLE_IS_NOT_USED parse(char &x, const char * s);
@@ -80,6 +81,10 @@ namespace graphchi {
     
     static void parse(unsigned int &x, const char * s) {
         x = (unsigned int) strtoul(s, NULL, 10);
+    }
+
+    static void parse(unsigned long int &x, const char * s) {
+        x = (unsigned long int) strtoull(s, NULL, 10);
     }
     
     static void parse(float &x, const char * s) {
@@ -400,7 +405,7 @@ namespace graphchi {
                 std::getline(graphFile, line);
             }
 
-            std::vector<uint> tokens = parseLine(line);
+            std::vector<vid_t> tokens = parseLine(line);
             n = tokens[0];
             m = tokens[1];
             if (tokens.size() == 2) {

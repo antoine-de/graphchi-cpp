@@ -594,13 +594,13 @@ namespace graphchi {
             std::string fname = filename_intervals(basefilename, nshards);
             FILE * f = fopen(fname.c_str(), "w");
             intervals.push_back(std::pair<vid_t,vid_t>(0, max_vertex_id));
-            fprintf(f, "%u\n", max_vertex_id);
+            fprintf(f, "%lu\n", max_vertex_id);
             fclose(f);
             
             /* Write meta-file with the number of vertices */
             std::string numv_filename = basefilename + ".numvertices";
             f = fopen(numv_filename.c_str(), "w");
-            fprintf(f, "%u\n", 1 + max_vertex_id);
+            fprintf(f, "%lu\n", 1 + max_vertex_id);
             fclose(f);
             
             assert(nshards == (int)intervals.size());
@@ -915,14 +915,14 @@ namespace graphchi {
             }
             assert(f != NULL);
             for(int i=0; i<(int)intervals.size(); i++) {
-               fprintf(f, "%u\n", intervals[i].second);
+               fprintf(f, "%lu\n", intervals[i].second);
             }
             fclose(f);
             
             /* Write meta-file with the number of vertices */
             std::string numv_filename = basefilename + ".numvertices";
             f = fopen(numv_filename.c_str(), "w");
-            fprintf(f, "%u\n", 1 + max_vertex_id);
+            fprintf(f, "%lu\n", 1 + max_vertex_id);
             fclose(f);
         }
         
