@@ -57,10 +57,10 @@ namespace graphchi {
        
         KERNEL kernel;
 
-        VT cumval;
+        VT cumval = {};
         
         vertex_info vinfo;
-        graphchi_context * gcontext;
+        graphchi_context * gcontext = nullptr;
         
         functional_vertex_unweighted_bulksync() : graphchi_vertex<VT, ET> () {}
         
