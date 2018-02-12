@@ -278,7 +278,7 @@ namespace graphchi {
             assert(closest_vid>=0);
             indexentry closest_offset = lowerbd_iter->second;
             assert(closest_vid <= v);
-            if (closest_vid > curvid) {   /* Note: this will fail if we have over 2B vertices! */
+            if (closest_vid > curvid) {
                 logstream(LOG_DEBUG)
                 << "Sliding shard, start: " << range_st << " moved to: " << closest_vid << " " << closest_offset.adjoffset << ", asked for : " << v << " was in: curvid= " << curvid  << " " << adjoffset << std::endl;
                 
@@ -406,7 +406,8 @@ namespace graphchi {
             vid_t lastrec = start;
             window_start_edataoffset = edataoffset;
             
-            for(vid_t i = curvid - start; i<nvecs; i++) {
+            assert(curvid >= start);
+            for(vid_t i=curvid - start; i<nvecs; i++) {
                 if (adjoffset >= adjfilesize) break;
                 
                 // TODO: skip unscheduled vertices.

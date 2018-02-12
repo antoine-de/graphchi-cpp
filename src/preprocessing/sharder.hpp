@@ -691,7 +691,7 @@ namespace graphchi {
             
             vid_t curvid=0;
 #ifdef DYNAMICEDATA
-            vid_t lastdst = 0xffffffffffffffff; // 64bits
+            vid_t lastdst = std::numeric_limits<vid_t>::max();
             int jumpover = 0;
             size_t num_uniq_edges = 0;
             size_t last_edge_count = 0;
