@@ -115,7 +115,7 @@ namespace graphchi {
     
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(vid_t val);
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(vid_t val) {
-        return 0xffffffffu == val;
+        return 0xffffffffffffffffu == val;
     }
     
     
@@ -131,7 +131,7 @@ namespace graphchi {
     
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<vid_t> * e);
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<vid_t> * e) {
-        e->set_data(0xffffffff);
+        e->set_data(0xffffffffffffffffu);
     }
     
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int> * e);

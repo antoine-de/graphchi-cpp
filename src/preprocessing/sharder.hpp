@@ -1031,7 +1031,7 @@ namespace graphchi {
             int blocksize = compressed_block_size;
             
             for(int p=0; p < nshards; p++) {
-                logstream(LOG_INFO) << "Initialize streaming shard: " << p << std::endl;
+                logstream(LOG_INFO) << "Initialize streaming shard: " << p << "[" << intervals[p].first << "-" << intervals[p].second << "]" <<std::endl;
                 sliding_shards.push_back(
                                          new slidingshard_t(iomgr, filename_shard_edata<dummy_t>(basefilename, p, nshards),
                                                             filename_shard_adj(basefilename, p, nshards), intervals[p].first,
@@ -1089,7 +1089,7 @@ namespace graphchi {
                     std::vector< graphchi_vertex<vid_t, dummy_t> > vertices(nvertices, graphchi_vertex<vid_t, dummy_t>()); // preallocate
                     
                     
-                    for(int i=0; i < nvertices; i++) {
+                    for(vid_t i=0; i < nvertices; i++) {
                         vertices[i] = graphchi_vertex<vid_t, dummy_t>(subinterval_st + i, NULL, NULL, 0, 0);
                         vertices[i].scheduled =  true;
                     }

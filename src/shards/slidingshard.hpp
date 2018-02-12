@@ -406,7 +406,7 @@ namespace graphchi {
             vid_t lastrec = start;
             window_start_edataoffset = edataoffset;
             
-            for(int i=((int)curvid) - ((int)start); i<nvecs; i++) {
+            for(vid_t i = curvid - start; i<nvecs; i++) {
                 if (adjoffset >= adjfilesize) break;
                 
                 // TODO: skip unscheduled vertices.
