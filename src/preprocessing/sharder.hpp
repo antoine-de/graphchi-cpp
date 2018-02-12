@@ -691,7 +691,7 @@ namespace graphchi {
             
             vid_t curvid=0;
 #ifdef DYNAMICEDATA
-            vid_t lastdst = 0xffffffff;
+            vid_t lastdst = 0xffffffffffffffff; // 64bits
             int jumpover = 0;
             size_t num_uniq_edges = 0;
             size_t last_edge_count = 0;
@@ -1010,8 +1010,8 @@ namespace graphchi {
         
         typedef char dummy_t;
         
-        typedef sliding_shard<int, dummy_t> slidingshard_t;
-        typedef memory_shard<int, dummy_t> memshard_t;
+        typedef sliding_shard<vid_t, dummy_t> slidingshard_t;
+        typedef memory_shard<vid_t, dummy_t> memshard_t;
         
         
 #ifndef DYNAMICEDATA
@@ -1020,7 +1020,7 @@ namespace graphchi {
             stripedio * iomgr = new stripedio(m);
             std::vector<slidingshard_t * > sliding_shards;
             
-            int subwindow = 5000000;
+            vid_t subwindow = 5000000;
             m.set("subwindow", (size_t)subwindow);
             
             int loadthreads = 4;
@@ -1072,19 +1072,25 @@ namespace graphchi {
                 memshard.only_adjacency = true;
                 logstream(LOG_INFO) << "Interval: " << interval_st << " " << interval_en << std::endl;
                 
-                for(vid_t subinterval_st=interval_st; subinterval_st <= interval_en; ) {
-                    vid_t subinterval_en = std::min(interval_en, subinterval_st + subwindow);
+                for(vid_t subinterval_st = interval_st; subinterval_st <= interval_en; ) {
+
+                    vid_t subinterval_en = subinterval_st + subwindow;
+                    logstream(LOG_INFO) << "First sub-window max: " << subinterval_en << std::endl;
+
+                    if (subinterval_en > interval_en) subinterval_en = interval_en;
+                    logstream(LOG_INFO) << "Verified sub-window max: " << subinterval_en << std::endl;
+
                     logstream(LOG_INFO) << "(Degree proc.) Sub-window: [" << subinterval_st << " - " << subinterval_en << "]" << std::endl;
                     assert(subinterval_en >= subinterval_st && subinterval_en <= interval_en);
                     
                     /* Preallocate vertices */
                     metrics_entry men = m.start_time();
-                    int nvertices = subinterval_en - subinterval_st + 1;
-                    std::vector< graphchi_vertex<int, dummy_t> > vertices(nvertices, graphchi_vertex<int, dummy_t>()); // preallocate
+                    vid_t nvertices = subinterval_en - subinterval_st + 1;
+                    std::vector< graphchi_vertex<vid_t, dummy_t> > vertices(nvertices, graphchi_vertex<vid_t, dummy_t>()); // preallocate
                     
                     
                     for(int i=0; i < nvertices; i++) {
-                        vertices[i] = graphchi_vertex<int, dummy_t>(subinterval_st + i, NULL, NULL, 0, 0);
+                        vertices[i] = graphchi_vertex<vid_t, dummy_t>(subinterval_st + i, NULL, NULL, 0, 0);
                         vertices[i].scheduled =  true;
                     }
                     
@@ -1114,13 +1120,13 @@ namespace graphchi {
                     metrics_entry mev = m.start_time();
                     // Read first current values
                     
-                    int * vbuf = (int*) malloc(nvertices * sizeof(int) * 2);
+                    vid_t * vbuf = (vid_t*) malloc(nvertices * sizeof(vid_t) * 2);
                     
-                    for(int i=0; i<nvertices; i++) {
+                    for(vid_t i=0; i<nvertices; i++) {
                         vbuf[2 * i] = vertices[i].num_inedges();
                         vbuf[2 * i +1] = vertices[i].num_outedges();
                     }
-                    pwritea(degreeOutF, vbuf, nvertices * sizeof(int) * 2, subinterval_st * sizeof(int) * 2);
+                    pwritea(degreeOutF, vbuf, nvertices * sizeof(vid_t) * 2, subinterval_st * sizeof(vid_t) * 2);
                     
                     free(vbuf);
                     

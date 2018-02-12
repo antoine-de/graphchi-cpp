@@ -19,7 +19,7 @@
 #define DEF_GRAPHCHI_TYPES
 
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace graphchi {
     
