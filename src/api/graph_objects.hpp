@@ -146,28 +146,28 @@ namespace graphchi {
     class internal_graphchi_vertex {
         
     public:   // Todo, use friend
-        volatile int inc;
-        volatile int outc;
+        volatile int inc = 0;
+        volatile int outc = 0;
         
-        vid_t vertexid;
+        vid_t vertexid = 0;
 
     protected:
-        graphchi_edge<EdgeDataType> * inedges_ptr;
-        graphchi_edge<EdgeDataType> * outedges_ptr;
+        graphchi_edge<EdgeDataType> * inedges_ptr = nullptr;
+        graphchi_edge<EdgeDataType> * outedges_ptr = nullptr;
         
                 
     public:
-        bool modified;
-        VertexDataType * dataptr;
+        bool modified = false;
+        VertexDataType * dataptr = nullptr;
 
 
         /* Accessed directly by the engine */
-        bool scheduled;
-        bool parallel_safe;
+        bool scheduled = false;
+        bool parallel_safe = true;
         
 #ifdef SUPPORT_DELETIONS
-        int deleted_inc;
-        int deleted_outc;
+        int deleted_inc = 0;
+        int deleted_outc = 0;
 #endif
         
         
@@ -184,16 +184,6 @@ namespace graphchi {
                                  int indeg, 
                                  int outdeg) : 
                             vertexid(_id), inedges_ptr(iptr), outedges_ptr(optr) {
-            inc = 0;
-            outc = 0;
-            scheduled = false;
-            modified = false;
-            parallel_safe = true;
-            dataptr = NULL;
-#ifdef SUPPORT_DELETIONS
-            deleted_inc = 0;
-            deleted_outc = 0;
-#endif
         }
         
         virtual ~internal_graphchi_vertex() {}
