@@ -916,14 +916,14 @@ namespace graphchi {
             }
             assert(f != NULL);
             for(int i=0; i<(int)intervals.size(); i++) {
-               fprintf(f, "%llu\n", intervals[i].second);
+               fprintf(f, "%lu\n", intervals[i].second);
             }
             fclose(f);
 
             /* Write meta-file with the number of vertices */
             std::string numv_filename = basefilename + ".numvertices";
             f = fopen(numv_filename.c_str(), "w");
-            fprintf(f, "%llu\n", 1 + max_vertex_id);
+            fprintf(f, "%lu\n", 1 + max_vertex_id);
             fclose(f);
         }
 

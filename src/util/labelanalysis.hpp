@@ -53,7 +53,7 @@ using namespace graphchi;
 template <typename LabelType>
 struct labelcount_tt {
     LabelType label;
-    unsigned int count;  // Count excludes the vertex which has its own id as the label. (Important optimization)
+    uint64_t count;  // Count excludes the vertex which has its own id as the label. (Important optimization)
     labelcount_tt(LabelType l, int c) : label(l), count(c) {}
     labelcount_tt() {}
 };
@@ -98,10 +98,10 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
         
         int nt = en - st + 1;
         
-        /* Mark vertices with its own label with 0xffffffff so they will be ignored */
+        /* Mark vertices with its own label with std::numeric_limits<vid_t>::max() so they will be ignored */
         for(int i=0; i < nt; i++) { 
             LabelType l = *vertexdata->vertex_data_ptr(i + st);
-            if (l == curvid) buffer[i] = 0xffffffff;
+            if (l == curvid) buffer[i] = std::numeric_limits<vid_t>::max();
             else buffer[i] = l;
             curvid++;
         }
@@ -112,9 +112,9 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
         /* Then collect */
         std::vector<labelcount_t> newlabels;
         newlabels.reserve(nt);
-        LabelType lastlabel = LabelType(0xffffffff);
+        LabelType lastlabel = LabelType(std::numeric_limits<vid_t>::max());
         for(int i=0; i < nt; i++) {
-            if (buffer[i] != LabelType(0xffffffff)) {
+            if (buffer[i] != LabelType(std::numeric_limits<vid_t>::max())) {
                 if (buffer[i] != lastlabel) {
                     newlabels.push_back(labelcount_t(buffer[i], 1));
                 } else {
