@@ -90,12 +90,12 @@ void analyze_labels2(std::string base_filename, FILE * pfile, int printtop = 20)
 
     int nt = (int) (len / sizeof(LabelType));
 
-    /* Mark vertices with its own label with 0xffffffff so they will be ignored */
+    /* Mark vertices with its own label with std::numeric_limits<vid_t>::max() so they will be ignored */
     for(int i=0; i < nt; i++) { 
       LabelType l = buffer[i];
       if (curvid > 0)
         fprintf(pfile, "%d 1 %d\n", curvid, l);
-      if (l == curvid) buffer[i] = 0xffffffff;
+      if (l == curvid) buffer[i] = std::numeric_limits<vid_t>::max();
       curvid++;
     }
 
@@ -105,9 +105,9 @@ void analyze_labels2(std::string base_filename, FILE * pfile, int printtop = 20)
     /* Then collect */
     std::vector<labelcount_t> newlabels;
     newlabels.reserve(nt);
-    vid_t lastlabel = 0xffffffff;
+    vid_t lastlabel = std::numeric_limits<vid_t>::max();
     for(int i=0; i < nt; i++) {
-      if (buffer[i] != 0xffffffff) {
+      if (buffer[i] != std::numeric_limits<vid_t>::max()) {
         if (buffer[i] != lastlabel) {
           newlabels.push_back(labelcount_t(buffer[i], 1));
         } else {

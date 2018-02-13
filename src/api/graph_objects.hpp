@@ -110,12 +110,12 @@ namespace graphchi {
     
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int val);
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int val) {
-        return 0xffffffff == (unsigned int)val;
+        return std::numeric_limits<int>::max() == (unsigned int)val;
     }
     
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(vid_t val);
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(vid_t val) {
-        return 0xffffffffffffffffu == val;
+        return std::numeric_limits<vid_t>::max() == val;
     }
     
     
@@ -131,12 +131,12 @@ namespace graphchi {
     
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<vid_t> * e);
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<vid_t> * e) {
-        e->set_data(0xffffffffffffffffu);
+        e->set_data(std::numeric_limits<vid_t>::max());
     }
     
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int> * e);
     static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int> * e) {
-        e->set_data(0xffffffff);
+        e->set_data(std::numeric_limits<int>::max());
     }
     
 #endif  
