@@ -589,7 +589,7 @@ namespace graphlab {
             switch (gather_direction) {
                 case ALL_EDGES:
                 case IN_EDGES:
-                    for(int i=0; i < vertex.num_inedges(); i++) {
+                    for(vid_t i=0; i < vertex.num_inedges(); i++) {
                         GraphLabEdgeWrapper<GLVertexDataType, EdgeDataType> edgeWrapper(vertex.inedge(i), &vertex, vertexInmemoryArray, true);
                         if (gathered > 0) sum += const_vprog.gather(glcontext, wrapperVertex, edgeWrapper);
                         else sum = const_vprog.gather(glcontext, wrapperVertex, edgeWrapper);
@@ -621,14 +621,14 @@ namespace graphlab {
             switch(scatter_direction) {
                 case ALL_EDGES:
                 case IN_EDGES:
-                    for(int i=0; i < vertex.num_inedges(); i++) {
+                    for(vid_t i=0; i < vertex.num_inedges(); i++) {
                         GraphLabEdgeWrapper<GLVertexDataType, EdgeDataType> edgeWrapper(vertex.inedge(i), &vertex, vertexInmemoryArray, true);
                         const_vprog.scatter(glcontext, wrapperVertex, edgeWrapper);
                     }    
                     if (scatter_direction != ALL_EDGES)
                         break;
                 case OUT_EDGES:
-                    for(int i=0; i < vertex.num_outedges(); i++) {
+                    for(vid_t i=0; i < vertex.num_outedges(); i++) {
                         GraphLabEdgeWrapper<GLVertexDataType, EdgeDataType> edgeWrapper(vertex.outedge(i), &vertex, vertexInmemoryArray, false);
                         const_vprog.scatter(glcontext, wrapperVertex, edgeWrapper);
                     }    

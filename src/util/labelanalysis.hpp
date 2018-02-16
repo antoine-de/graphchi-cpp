@@ -96,10 +96,10 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
         /* Load the vertex values */
         vertexdata->load(st, en);
         
-        int nt = en - st + 1;
+        vid_t nt = en - st + 1;
         
         /* Mark vertices with its own label with std::numeric_limits<vid_t>::max() so they will be ignored */
-        for(int i=0; i < nt; i++) { 
+        for(vid_t i=0; i < nt; i++) { 
             LabelType l = *vertexdata->vertex_data_ptr(i + st);
             if (l == curvid) buffer[i] = std::numeric_limits<vid_t>::max();
             else buffer[i] = l;
@@ -113,7 +113,7 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
         std::vector<labelcount_t> newlabels;
         newlabels.reserve(nt);
         LabelType lastlabel = LabelType(std::numeric_limits<vid_t>::max());
-        for(int i=0; i < nt; i++) {
+        for(vid_t i=0; i < nt; i++) {
             if (buffer[i] != LabelType(std::numeric_limits<vid_t>::max())) {
                 if (buffer[i] != lastlabel) {
                     newlabels.push_back(labelcount_t(buffer[i], 1));
@@ -125,17 +125,17 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
         }
         
         if (first) {
-            for(int i=0; i < (int)newlabels.size(); i++) {
+            for(size_t i=0; i < newlabels.size(); i++) {
                 curlabels.push_back(newlabels[i]);
             }
             
         } else {
             /* Merge current and new label counts */
-            int cl = 0;
-            int nl = 0;
+            size_t cl = 0;
+            size_t nl = 0;
             std::vector< labelcount_t > merged;
             merged.reserve(curlabels.size() + newlabels.size());
-            while(cl < (int)curlabels.size() && nl < (int)newlabels.size()) {
+            while(cl < curlabels.size() && nl < newlabels.size()) {
                 if (newlabels[nl].label == curlabels[cl].label) {
                     merged.push_back(labelcount_t(newlabels[nl].label, newlabels[nl].count + curlabels[cl].count));
                     nl++; cl++;
@@ -149,8 +149,8 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
                     }
                 }
             }
-            while(cl < (int)curlabels.size()) merged.push_back(curlabels[cl++]);
-            while(nl < (int)newlabels.size()) merged.push_back(newlabels[nl++]);
+            while(cl < curlabels.size()) merged.push_back(curlabels[cl++]);
+            while(nl < newlabels.size()) merged.push_back(newlabels[nl++]);
             
             curlabels = merged;
         }
@@ -170,7 +170,7 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
         logstream(LOG_ERROR) << "Could not write label outputfile : " << outname << std::endl;
         return;
     }
-    for(int i=0; i < (int) curlabels.size(); i++) {
+    for(size_t i=0; i < curlabels.size(); i++) {
         resf << curlabels[i].label << "," << curlabels[i].count + 1 << std::endl;
     }
     resf.close();
@@ -178,7 +178,7 @@ void analyze_labels(std::string basefilename, int printtop = 20) {
     std::cout << "Total number of different labels (components/communities): " << curlabels.size() << std::endl;
     std::cout << "List of labels was written to file: " << outname << std::endl;
     
-    for(int i=0; i < (int)std::min((size_t)printtop, curlabels.size()); i++) {
+    for(size_t i=0; i < std::min((size_t)printtop, curlabels.size()); i++) {
         std::cout << (i+1) << ". label: " << curlabels[i].label << ", size: " << curlabels[i].count + 1 << std::endl;
     }
     

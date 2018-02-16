@@ -337,9 +337,10 @@ namespace graphchi {
          */
         size_t num_edges_subinterval(vid_t st, vid_t en) {
             size_t num_edges = 0;
-            int nvertices = en - st + 1;
+            assert(en + 1 >= st);
+            size_t nvertices = en - st + 1;
             if (scheduler != NULL) {
-                for(int i=0; i < nvertices; i++) {
+                for(size_t i=0; i < nvertices; i++) {
                     bool is_sched = scheduler->is_scheduled(st + i);
                     if (is_sched) {
                         degree d = degree_handler->get_degree(st + i);
@@ -347,7 +348,7 @@ namespace graphchi {
                     }
                 }
             } else {
-                for(int i=0; i < nvertices; i++) {
+                for(size_t i=0; i < nvertices; i++) {
                     degree d = degree_handler->get_degree(st + i);
                     num_edges += d.indegree * store_inedges + d.outdegree;
                 }
@@ -402,6 +403,7 @@ namespace graphchi {
                     v.parallel_safe = true;
                 }
             }
+            assert(sub_interval_en >= sub_interval_st);
             vid_t sub_interval_len = sub_interval_en - sub_interval_st;
 
             std::vector<vid_t> random_order(randomization ? sub_interval_len + 1 : 0);
@@ -418,9 +420,11 @@ namespace graphchi {
                     {
         #pragma omp section
                         {
-        #pragma omp parallel for
+//        #pragma omp parallel for
                         for(vid_t idx=0; idx <= sub_interval_len; idx++) {
+                            assert(sub_interval_en >= sub_interval_st);
                                 vid_t vid = sub_interval_st + (randomization ? random_order[idx] : idx);
+                                assert(vid >= sub_interval_st || false);
                                 svertex_t & v = vertices[vid - sub_interval_st];
                                 
                                 if (exec_threads == 1 || v.parallel_safe) {
@@ -539,11 +543,12 @@ namespace graphchi {
             size_t num_edges = num_edges_subinterval(sub_interval_st, sub_interval_en);
             
             /* Allocate edge buffer */
+            std::cout << "allocating " << num_edges << " edges for " << num_edges * sizeof(graphchi_edge<EdgeDataType>) << std::endl;
             edata = (graphchi_edge<EdgeDataType>*) malloc(num_edges * sizeof(graphchi_edge<EdgeDataType>));
             
             /* Assign vertex edge array pointers */
             size_t ecounter = 0;
-            for(int i=0; i < (int)nvertices; i++) {
+            for(size_t i=0; i < nvertices; i++) {
                 degree d = degree_handler->get_degree(sub_interval_st + i);
                 int inc = d.indegree;
                 int outc = d.outdegree * (!disable_outedges);
@@ -884,7 +889,8 @@ namespace graphchi {
                         }
                         
                         /* Initialize vertices */
-                        int nvertices = sub_interval_en - sub_interval_st + 1;
+                        assert(sub_interval_en + 1 >= sub_interval_st);
+                        size_t nvertices = sub_interval_en - sub_interval_st + 1;
                         graphchi_edge<EdgeDataType> * edata = NULL;
                         
                         std::vector<svertex_t> vertices(nvertices, svertex_t());
@@ -918,7 +924,7 @@ namespace graphchi {
                         
                         /* Delete edge buffer. TODO: reuse. */
                         if (edata != NULL) {
-                            delete edata;
+                            free(edata);
                             edata = NULL;
                         }
                        

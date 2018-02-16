@@ -120,8 +120,8 @@ struct PagerankProgram : public GraphChiProgram<VertexDataType, EdgeDataType> {
   */
 struct PagerankProgramInmem : public GraphChiProgram<VertexDataType, EdgeDataType> {
     
-    std::vector<EdgeDataType> pr;
-    PagerankProgramInmem(int nvertices) :   pr(nvertices, RANDOMRESETPROB) {}
+    std::vector<VertexDataType> pr;
+    PagerankProgramInmem(size_t nvertices) :   pr(nvertices, RANDOMRESETPROB) {}
     
     void update(graphchi_vertex<VertexDataType, EdgeDataType> &v, graphchi_context &ginfo) {
         if (ginfo.iteration > 0) {

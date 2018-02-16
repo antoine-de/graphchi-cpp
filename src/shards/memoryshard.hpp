@@ -350,10 +350,10 @@ namespace graphchi {
             
             /* Load in parallel: replaces older stream solution */
             size_t bufsize = 16 * 1024 * 1024;
-            int n = (int) (adjfilesize / bufsize + 1);
+            size_t n = (size_t) (adjfilesize / bufsize + 1);
             
 #pragma omp parallel for
-            for(int i=0; i < n; i++) {
+            for(size_t i=0; i < n; i++) {
                 size_t toread = std::min(adjfilesize - i * bufsize, (size_t)bufsize);
                 iomgr->preada_now(adj_session, adjdata + i * bufsize, toread, i * bufsize, true);
             }

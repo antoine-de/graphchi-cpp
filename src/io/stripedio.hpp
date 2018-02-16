@@ -541,7 +541,7 @@ namespace graphchi {
                 size_t checklen=0;
                 refcountptr * refptr = new refcountptr((char*)tbuf, (int) stripelist.size());
                 refptr->count++; // Take a reference so we can spin on it
-                for(int i=0; i < (int)stripelist.size(); i++) {
+                for(size_t i=0; i < stripelist.size(); i++) {
                     stripe_chunk chunk = stripelist[i];
                     __sync_add_and_fetch(&thread_infos[chunk.mplex_thread]->pending_reads, 1);
                     
