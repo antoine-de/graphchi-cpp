@@ -101,7 +101,7 @@ namespace graphchi {
         stripedio * iomgr;
         bool compressed;
         bool closefd;
-        volatile int * doneptr;
+        volatile long * doneptr;
         
         iotask() : action(READ), fd(0), session(0), ptr(NULL), length(0), offset(0), ptroffset(0), free_after(false), iomgr(NULL), compressed(false), closefd(false), doneptr(NULL) {}
         iotask(stripedio * iomgr, BLOCK_ACTION act, int fd, int session,  refcountptr * ptr, size_t length, size_t offset, size_t ptroffset, bool free_after, bool compressed, bool closefd=false) :
@@ -478,7 +478,7 @@ namespace graphchi {
         }
         
         template <typename T>
-        void preada_async(int session,  T * tbuf, size_t nbytes, size_t off, volatile int * doneptr = NULL) {
+        void preada_async(int session,  T * tbuf, size_t nbytes, size_t off, volatile long * doneptr = NULL) {
             std::vector<stripe_chunk> stripelist = stripe_offsets(session, nbytes, off);
             if (compressed_session(session)) {
                 assert(stripelist.size() == 1);
@@ -628,10 +628,10 @@ namespace graphchi {
           * @param doneptr is decremented to zero when task is ready
           */
         template <typename T>
-        void managed_preada_async(int session, T ** tbuf, size_t nbytes, size_t off, volatile int * doneptr = NULL) {
+        void managed_preada_async(int session, T ** tbuf, size_t nbytes, size_t off, volatile long * doneptr = NULL) {
             preada_async(session, *tbuf, nbytes,  off, doneptr);
         }
-        
+
         template <typename T>
         void managed_release(int session, T ** ptr) {
             assert(*ptr != NULL);
