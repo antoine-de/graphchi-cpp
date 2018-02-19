@@ -639,7 +639,7 @@ namespace graphchi {
 #ifndef DYNAMICEDATA
             iSort(shovelbuf, (int)numedges, max_vertex_id, srcF<EdgeDataType>());
 #else
-            quickSort(shovelbuf, (int)numedges, edge_t_src_less<EdgeDataType>);
+            quickSort(shovelbuf, numedges, edge_t_src_less<EdgeDataType>);
 #endif
             m.stop_time("finish_shard.sort");
 

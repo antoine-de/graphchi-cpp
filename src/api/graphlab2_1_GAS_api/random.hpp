@@ -387,7 +387,7 @@ namespace graphlab {
          * \ingroup random
          * Simulates the standard rand function as defined in cstdlib
          */
-        inline int rand() { return fast_uniform(0, RAND_MAX); }
+        inline size_t rand() { return fast_uniform(Oul, std::numeric_limits<size_t>::max()); }
         
         
         /**
