@@ -23,8 +23,7 @@
 
 namespace graphchi {
     
-    typedef uint32_t vid_t;
-    
+    typedef unsigned long vid_t;
     
     /** 
       * PairContainer encapsulates a pair of values of some type.

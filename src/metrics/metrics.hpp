@@ -293,6 +293,10 @@ namespace graphchi {
     }
       
       inline void stop_time(metrics_entry me, std::string key, int iternum, bool show=false) {
+        stop_time(me, key, (long) iternum, show);
+      }
+
+      inline void stop_time(metrics_entry me, std::string key, long iternum, bool show=false) {
           me.timer_stop();
           mlock.lock();
           
@@ -305,7 +309,7 @@ namespace graphchi {
               std::cout << key << ": " << me.lasttime << " secs." << std::endl;
           
           char s[256];
-          sprintf(s, "%s.%d", key.c_str(), iternum);
+          sprintf(s, "%s.%ld", key.c_str(), iternum);
           std::string ikey(s);
           if (entries.count(ikey) == 0) {
               entries[ikey] = metrics_entry(TIME);
@@ -313,7 +317,6 @@ namespace graphchi {
           entries[ikey].add(t);
           
           mlock.unlock();
-          
       }
       
       

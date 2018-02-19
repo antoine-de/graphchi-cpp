@@ -174,7 +174,7 @@ namespace graphchi {
         sblock * curadjblock;
         metrics &m;
         
-        std::map<int, indexentry> sparse_index; // Sparse index that can be created in the fly
+        std::map<long, indexentry> sparse_index; // Sparse index that can be created in the fly
         bool disable_writes;
         bool async_edata_loading;
         bool disable_async_writes;
@@ -249,9 +249,9 @@ namespace graphchi {
         void initdata() {
             logstream(LOG_DEBUG) << "Initialize edge data: " << filename_edata << std::endl;
             ET * initblock = (ET *) malloc(blocksize);
-            for(int i=0; i < (int) (blocksize/sizeof(ET)); i++) initblock[i] = ET();
+            for(size_t i=0; i < blocksize/sizeof(ET); i++) initblock[i] = ET();
             for(size_t off=0; off < edatafilesize; off += blocksize) {
-                std::string blockfilename = filename_shard_edata_block(filename_edata, (int) (off / blocksize), blocksize);
+                std::string blockfilename = filename_shard_edata_block(filename_edata, off / blocksize, blocksize);
                 size_t len = std::min(blocksize, edatafilesize - off);
                 int f = open(blockfilename.c_str(), O_WRONLY);
                 pwritea(f, initblock, len, 0);
@@ -267,18 +267,18 @@ namespace graphchi {
         void save_offset() {
             // Note, so that we can use the lower bound operation in map, we need
             // to insert indices in reverse order
-            sparse_index.insert(std::pair<int, indexentry>(-((int)curvid), indexentry(adjoffset, edataoffset)));
+            sparse_index.insert(std::pair<long, indexentry>(-((long)curvid), indexentry(adjoffset, edataoffset)));
         }
         
         void move_close_to(vid_t v) {
             if (curvid >= v) return;
             
-            std::map<int,indexentry>::iterator lowerbd_iter = sparse_index.lower_bound(-((int)v));
-            int closest_vid = -((int)lowerbd_iter->first);
+            std::map<long,indexentry>::iterator lowerbd_iter = sparse_index.lower_bound(-((long)v));
+            long closest_vid = -((long)lowerbd_iter->first);
             assert(closest_vid>=0);
             indexentry closest_offset = lowerbd_iter->second;
-            assert(closest_vid <= (int)v);
-            if (closest_vid > (int)curvid) {   /* Note: this will fail if we have over 2B vertices! */
+            assert(closest_vid <= (long)v);
+            if (closest_vid > (long)curvid) {   /* Note: this will fail if we have over 2B vertices! */
                 logstream(LOG_DEBUG)
                 << "Sliding shard, start: " << range_st << " moved to: " << closest_vid << " " << closest_offset.adjoffset << ", asked for : " << v << " was in: curvid= " << curvid  << " " << adjoffset << std::endl;
                 
@@ -309,7 +309,7 @@ namespace graphchi {
                     }
                 }
                 // Load next
-                std::string blockfilename = filename_shard_edata_block(filename_edata, (int) (edataoffset / blocksize), blocksize);
+                std::string blockfilename = filename_shard_edata_block(filename_edata, edataoffset / blocksize, blocksize);
                 
                 void * cachedblock = iomgr->get_block_cache().get_cached(blockfilename);
                 
@@ -406,13 +406,13 @@ namespace graphchi {
             vid_t lastrec = start;
             window_start_edataoffset = edataoffset;
             
-            for(int i=((int)curvid) - ((int)start); i<nvecs; i++) {
+            for(long i=((long)curvid) - ((long)start); i<nvecs; i++) {
                 if (adjoffset >= adjfilesize) break;
                 
                 // TODO: skip unscheduled vertices.
                 
-                int n;
-                if (record_index && (size_t)(curvid - lastrec) >= (size_t) std::max((int)100000, nvecs/16)) {
+                long n;
+                if (record_index && (size_t)(curvid - lastrec) >= (size_t) std::max((long)100000, nvecs/16)) {
                     save_offset();
                     lastrec = curvid;
                 }
@@ -522,11 +522,11 @@ namespace graphchi {
          * Release blocks that come prior to the current offset/
          */
         void release_prior_to_offset(bool all=false, bool disable_writes=false) { // disable writes is for the dynamic case
-            for(int i=(int)activeblocks.size() - 1; i >= 0; i--) {
+            for(long i=(long)activeblocks.size() - 1; i >= 0; i--) {
                 sblock &b = activeblocks[i];
                 if (b.end <= edataoffset || all) {
                     commit(b, all, disable_writes);
-                    activeblocks.erase(activeblocks.begin() + (unsigned int)i);
+                    activeblocks.erase(activeblocks.begin() + (unsigned long)i);
                 }
             }
         }

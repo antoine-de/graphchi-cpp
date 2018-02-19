@@ -137,9 +137,9 @@ namespace graphchi {
     // Sorts by first dst then src
     template <class EdgeDataType>
     struct dstSrcF {
-        size_t maxvertex;
+        vid_t maxvertex;
         dstSrcF(vid_t maxvertex) : maxvertex(maxvertex + 1) {}
-        inline size_t operator() (edge_with_value<EdgeDataType> a) {return size_t(a.dst) * maxvertex + a.src;}
+        inline vid_t operator() (edge_with_value<EdgeDataType> a) {return size_t(a.dst) * maxvertex + a.src;}
     };
     
     template <class EdgeDataType>
@@ -191,9 +191,7 @@ namespace graphchi {
                 logstream(LOG_INFO) << "Sorting shovel: " << shovelname << ", max:" << max_vertex << std::endl;
                 iSort(buffer, (intT)numedges, (intT)max_vertex, dstF<EdgeDataType>());
                 logstream(LOG_INFO) << "Sort done." << shovelname << std::endl;
-                
             }
-            
             
             int f = open(shovelname.c_str(), O_WRONLY | O_CREAT, S_IROTH | S_IWOTH | S_IWUSR | S_IRUSR);
             writea(f, buffer, numedges * sizeof(edge_with_value<EdgeDataType>));
@@ -209,7 +207,6 @@ namespace graphchi {
         task->flush();
         return NULL;
     }
-    
     
     template <typename EdgeDataType>
     struct shovel_merge_source : public merge_source<edge_with_value<EdgeDataType> > {
@@ -289,18 +286,18 @@ namespace graphchi {
         vid_t max_vertex_id;
         
         /* Sharding */
-        int nshards;
+        long nshards;
         std::vector< std::pair<vid_t, vid_t> > intervals;
         
-        int phase;
+        long phase;
         
-        int vertexchunk;
+        long vertexchunk;
         size_t nedges;
         std::string prefix;
         
-        int compressed_block_size;
+        long compressed_block_size;
         
-        int * bufptrs;
+        long * bufptrs;
         size_t bufsize;
         size_t edgedatasize;
         size_t ebuffer_size;
@@ -320,7 +317,7 @@ namespace graphchi {
         
         size_t curshovel_idx;
         size_t shovelsize;
-        int numshovels;
+        long numshovels;
         size_t shoveled_edges;
         bool shovel_sorted;
         edge_with_value<EdgeDataType> * curshovel_buffer;
@@ -399,14 +396,14 @@ namespace graphchi {
                 
                 /* Wait for threads to finish */
                 logstream(LOG_INFO) << "Waiting shoveling threads..." << std::endl;
-                for(int i=0; i < (int)shovelthreads.size(); i++) {
+                for(size_t i=0; i < shovelthreads.size(); i++) {
                     pthread_join(shovelthreads[i], NULL);
                 }
             } else {
                 if (shovelthreads.size() > 2) {
                     logstream(LOG_INFO) << "Too many outstanding shoveling threads..." << std::endl;
 
-                    for(int i=0; i < (int)shovelthreads.size(); i++) {
+                    for(size_t i=0; i < shovelthreads.size(); i++) {
                         pthread_join(shovelthreads[i], NULL);
                     }
                     shovelthreads.clear();
@@ -477,11 +474,12 @@ namespace graphchi {
             bufptr += sizeof(T);
         }
         
-        int blockid;
+        long blockid;
         
         template <typename T>
         void edata_flush(char * buf, char * bufptr, std::string & shard_filename, size_t totbytes) {
-            int len = (int) (bufptr - buf);
+            assert(bufptr > buf);
+            size_t len = bufptr - buf;
             
             m.start_time("edata_flush");
             
@@ -492,13 +490,10 @@ namespace graphchi {
             
             m.stop_time("edata_flush");
             
-            
 #ifdef DYNAMICEDATA
             // Write block's uncompressed size
             write_block_uncompressed_size(block_filename, len);
-            
 #endif
-            
             blockid++;
         }
         
@@ -532,7 +527,7 @@ namespace graphchi {
          * Executes sharding.
          * @param nshards_string the number of shards as a number, or "auto" for automatic determination
          */
-        int execute_sharding(std::string nshards_string) {
+        long execute_sharding(std::string nshards_string) {
             m.start_time("execute_sharding");
             
             determine_number_of_shards(nshards_string);
@@ -555,7 +550,7 @@ namespace graphchi {
         virtual void determine_number_of_shards(std::string nshards_string) {
             /* Count shoveled edges */
             shoveled_edges = 0;
-            for(int i=0; i<(int)shoveltasks.size(); i++) {
+            for(size_t i=0; i<shoveltasks.size(); i++) {
                 shoveled_edges += shoveltasks[i]->numedges;
                 delete shoveltasks[i];
             }
@@ -572,15 +567,14 @@ namespace graphchi {
                 double max_shardsize = membudget_mb * 1024. * 1024. / 8;
                 logstream(LOG_INFO) << "Determining maximum shard size: " << (max_shardsize / 1024. / 1024.) << " MB." << std::endl;
                 
-                nshards = (int) ( 1 + (numedges * sizeof(FinalEdgeDataType) / max_shardsize) + 0.5);
+                nshards =  1 + (numedges * sizeof(FinalEdgeDataType) / max_shardsize) + 0.5;
                 
 #ifdef DYNAMICEDATA
                 // For dynamic edge data, more working memory is needed, thus the number of shards is larger.
                 nshards = (int) ( 2 + 4 * (numedges * sizeof(FinalEdgeDataType) / max_shardsize) + 0.5);
 #endif
-                
             } else {
-                nshards = atoi(nshards_string.c_str());
+                nshards = atoll(nshards_string.c_str());
             }
             assert(nshards > 0);
             logstream(LOG_INFO) << "Number of shards to be created: " << nshards << std::endl;
@@ -594,16 +588,16 @@ namespace graphchi {
             std::string fname = filename_intervals(basefilename, nshards);
             FILE * f = fopen(fname.c_str(), "w");
             intervals.push_back(std::pair<vid_t,vid_t>(0, max_vertex_id));
-            fprintf(f, "%u\n", max_vertex_id);
+            fprintf(f, "%lu\n", max_vertex_id);
             fclose(f);
             
             /* Write meta-file with the number of vertices */
             std::string numv_filename = basefilename + ".numvertices";
             f = fopen(numv_filename.c_str(), "w");
-            fprintf(f, "%u\n", 1 + max_vertex_id);
+            fprintf(f, "%lu\n", 1 + max_vertex_id);
             fclose(f);
             
-            assert(nshards == (int)intervals.size());
+            assert(nshards == (long)intervals.size());
         }
         
         
@@ -612,7 +606,6 @@ namespace graphchi {
             ss << basefilename << sizeof(EdgeDataType) << "." << idx << ".shovel";
             return ss.str();
         }
-        
         
         int lastpart;
         degree * degrees;
@@ -637,7 +630,7 @@ namespace graphchi {
             
             m.start_time("finish_shard.sort");
 #ifndef DYNAMICEDATA
-            iSort(shovelbuf, (int)numedges, max_vertex_id, srcF<EdgeDataType>());
+            iSort(shovelbuf, (intT)numedges, max_vertex_id, srcF<EdgeDataType>());
 #else
             quickSort(shovelbuf, (int)numedges, edge_t_src_less<EdgeDataType>);
 #endif
@@ -806,12 +799,12 @@ namespace graphchi {
                     // Handle zeros
                     if (!edge.stopper()) {
                         if (edge.src - curvid > 1 || (i == 0 && edge.src>0)) {
-                            int nz = edge.src - curvid - 1;
+                            long nz = edge.src - curvid - 1;
                             if (i == 0 && edge.src > 0) nz = edge.src; // border case with the first one
                             do {
                                 bwrite<uint8_t>(f, buf, bufptr, 0);
                                 nz--;
-                                int tnz = std::min(254, nz);
+                                long tnz = std::min(254L, nz);
                                 bwrite<uint8_t>(f, buf, bufptr, (uint8_t) tnz);
                                 nz -= tnz;
                             } while (nz>0);
@@ -853,7 +846,7 @@ namespace graphchi {
         size_t cur_shard_counter;
         size_t shard_capacity;
         size_t sharded_edges;
-        int shardnum;
+        long shardnum;
         edge_with_value<EdgeDataType> * sinkbuffer;
         vid_t prevvid;
         vid_t this_interval_start;
@@ -914,15 +907,15 @@ namespace graphchi {
                 strerror(errno) << std::endl;
             }
             assert(f != NULL);
-            for(int i=0; i<(int)intervals.size(); i++) {
-               fprintf(f, "%u\n", intervals[i].second);
+            for(size_t i=0; i<intervals.size(); i++) {
+               fprintf(f, "%lu\n", intervals[i].second);
             }
             fclose(f);
             
             /* Write meta-file with the number of vertices */
             std::string numv_filename = basefilename + ".numvertices";
             f = fopen(numv_filename.c_str(), "w");
-            fprintf(f, "%u\n", 1 + max_vertex_id);
+            fprintf(f, "%lu\n", 1 + max_vertex_id);
             fclose(f);
         }
         
@@ -973,7 +966,7 @@ namespace graphchi {
             logstream(LOG_INFO) << "Buffer size in merge phase: " << B << std::endl;
             prevvid = (-1);
             std::vector< merge_source<edge_with_value<EdgeDataType> > *> sources;
-            for(int i=0; i < numshovels; i++) {
+            for(long i=0; i < numshovels; i++) {
                 sources.push_back(new shovel_merge_source<EdgeDataType>(B, shovel_filename(i)));
             }
             
@@ -981,7 +974,7 @@ namespace graphchi {
             merger.merge();
             
             // Delete sources
-            for(int i=0; i < (int)sources.size(); i++) {
+            for(size_t i=0; i < sources.size(); i++) {
                 delete (shovel_merge_source<EdgeDataType> *)sources[i];
             }
             
@@ -1010,8 +1003,8 @@ namespace graphchi {
         
         typedef char dummy_t;
         
-        typedef sliding_shard<int, dummy_t> slidingshard_t;
-        typedef memory_shard<int, dummy_t> memshard_t;
+        typedef sliding_shard<long, dummy_t> slidingshard_t;
+        typedef memory_shard<long, dummy_t> memshard_t;
         
         
 #ifndef DYNAMICEDATA
@@ -1020,17 +1013,17 @@ namespace graphchi {
             stripedio * iomgr = new stripedio(m);
             std::vector<slidingshard_t * > sliding_shards;
             
-            int subwindow = 5000000;
+            long subwindow = 5000000;
             m.set("subwindow", (size_t)subwindow);
             
-            int loadthreads = 4;
+            long loadthreads = 4;
             
             m.start_time("degrees.runtime");
             
             /* Initialize streaming shards */
-            int blocksize = compressed_block_size;
+            long blocksize = compressed_block_size;
             
-            for(int p=0; p < nshards; p++) {
+            for(long p=0; p < nshards; p++) {
                 logstream(LOG_INFO) << "Initialize streaming shard: " << p << std::endl;
                 sliding_shards.push_back(
                                          new slidingshard_t(iomgr, filename_shard_edata<dummy_t>(basefilename, p, nshards),
@@ -1050,14 +1043,20 @@ namespace graphchi {
                 logstream(LOG_ERROR) << "Could not create: " << degreeOutF << std::endl;
             }
             assert(degreeOutF >= 0);
-            int trerr = ftruncate(degreeOutF, ginfo.nvertices * sizeof(int) * 2);
+
+            /**
+             * HYPER DANGEROUS !!!!!
+             */
+            int trerr = ftruncate(degreeOutF, ginfo.nvertices * sizeof(long) * 2);
+            /** What is done here ??? **/
+
             assert(trerr == 0);
             if (trerr != 0) {
                 logstream(LOG_FATAL) << "Could not truncate!" << std::endl;
                 exit(0);
             }
             
-            for(int window=0; window<nshards; window++) {
+            for(long window=0; window<nshards; window++) {
                 metrics_entry mwi = m.start_time();
                 
                 vid_t interval_st = intervals[window].first;
@@ -1079,19 +1078,19 @@ namespace graphchi {
                     
                     /* Preallocate vertices */
                     metrics_entry men = m.start_time();
-                    int nvertices = subinterval_en - subinterval_st + 1;
-                    std::vector< graphchi_vertex<int, dummy_t> > vertices(nvertices, graphchi_vertex<int, dummy_t>()); // preallocate
+                    long nvertices = subinterval_en - subinterval_st + 1;
+                    std::vector< graphchi_vertex<long, dummy_t> > vertices(nvertices, graphchi_vertex<long, dummy_t>()); // preallocate
                     
                     
-                    for(int i=0; i < nvertices; i++) {
-                        vertices[i] = graphchi_vertex<int, dummy_t>(subinterval_st + i, NULL, NULL, 0, 0);
+                    for(long i=0; i < nvertices; i++) {
+                        vertices[i] = graphchi_vertex<long, dummy_t>(subinterval_st + i, NULL, NULL, 0, 0);
                         vertices[i].scheduled =  true;
                     }
                     
                     metrics_entry me = m.start_time();
                     omp_set_num_threads(loadthreads);
 #pragma omp parallel for
-                    for(int p=-1; p < nshards; p++)  {
+                    for(long p=-1; p < nshards; p++)  {
                         if (p == (-1)) {
                             // if first window, now need to load the memshard
                             if (memshard.loaded() == false) {
@@ -1114,13 +1113,14 @@ namespace graphchi {
                     metrics_entry mev = m.start_time();
                     // Read first current values
                     
-                    int * vbuf = (int*) malloc(nvertices * sizeof(int) * 2);
+                    // HELP !!!
+                    long * vbuf = (long*) malloc(nvertices * sizeof(long) * 2);
                     
-                    for(int i=0; i<nvertices; i++) {
+                    for(long i=0; i<nvertices; i++) {
                         vbuf[2 * i] = vertices[i].num_inedges();
                         vbuf[2 * i +1] = vertices[i].num_outedges();
                     }
-                    pwritea(degreeOutF, vbuf, nvertices * sizeof(int) * 2, subinterval_st * sizeof(int) * 2);
+                    pwritea(degreeOutF, vbuf, nvertices * sizeof(long) * 2, subinterval_st * sizeof(long) * 2);
                     
                     free(vbuf);
                     

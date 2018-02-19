@@ -156,7 +156,7 @@ namespace graphchi {
     
     // Removes \n from the end of line
     inline void FIXLINE(char * s) {
-        int len = (int) strlen(s)-1;
+        size_t len = strlen(s)-1;
         if(s[len] == '\n') s[len] = 0;
     }
     
@@ -239,7 +239,7 @@ namespace graphchi {
                 << "Current line: \"" << s << "\"\n";
                 assert(false);
             }
-            vid_t from = atoi(t);
+            vid_t from = atoll(t);
             t = strtok(NULL, delims);
             if (t == NULL) {
                 logstream(LOG_ERROR) << "Input file is not in right format. "
@@ -247,7 +247,7 @@ namespace graphchi {
                 << "Current line: \"" << s << "\"\n";
                 assert(false);
             }
-            vid_t to = atoi(t);
+            vid_t to = atoll(t);
             
             /* Check if has value */
             t = strtok(NULL, delims);
@@ -302,7 +302,7 @@ namespace graphchi {
         assert(inf != NULL);
         logstream(LOG_INFO) << "Reading in adjacency list format!" << std::endl;
         
-        int maxlen = 100000000;
+        long maxlen = 100000000;
         char * s = (char*) malloc(maxlen);
         
         size_t bytesread = 0;
@@ -323,13 +323,13 @@ namespace graphchi {
             if (s[0] == '#') continue; // Comment
             if (s[0] == '%') continue; // Comment
             char * t = strtok(s, delims);
-            vid_t from = atoi(t);
+            vid_t from = atoll(t);
             t = strtok(NULL,delims);
             if (t != NULL) {
-                vid_t num = atoi(t);
+                vid_t num = atoll(t);
                 vid_t i = 0;
                 while((t = strtok(NULL,delims)) != NULL) {
-                    vid_t to = atoi(t);
+                    vid_t to = atoll(t);
                     if (from != to) {
                         sharderobj.preprocessing_add_edge(from, to, EdgeDataType());
                     }
@@ -364,7 +364,7 @@ namespace graphchi {
         // split string and push adjacent nodes
         while (std::getline(stream, token, delim)) {
             if (token.size() != 0) {
-                vid_t v = atoi(token.c_str());
+                vid_t v = atoll(token.c_str());
                 adjacencies.push_back(v);
             }
         }
@@ -384,23 +384,23 @@ namespace graphchi {
         
         std::ifstream graphFile(inputPath.c_str());
 
-        if (! graphFile.good()) {
+        if (!graphFile.good()) {
             logstream(LOG_FATAL) << "Could not load :" << inputPath << " error: " << strerror(errno) << std::endl;
         }
         
         std::string line; // current line
 
         // handle header line
-        int n = 0;  // number of nodes
-        int m = 0;  // number of edges
-        int weighted; // indicates weight scheme: 
+        long n = 0;  // number of nodes
+        long m = 0;  // number of edges
+        long weighted; // indicates weight scheme: 
 
         if (std::getline(graphFile, line)) {
             while (line[0] == '%') { // skip comments
                 std::getline(graphFile, line);
             }
 
-            std::vector<uint> tokens = parseLine(line);
+            std::vector<vid_t> tokens = parseLine(line);
             n = tokens[0];
             m = tokens[1];
             if (tokens.size() == 2) {
@@ -471,7 +471,7 @@ namespace graphchi {
                 assert(inf != NULL);
                 logstream(LOG_INFO) << "Reading in cassovary format!" << std::endl;
                 
-                int maxlen = 100000000;
+                long maxlen = 100000000;
                 char * s = (char*) malloc(maxlen);
                 
                 size_t bytesread = 0;
@@ -491,17 +491,17 @@ namespace graphchi {
                     if (s[0] == '#') continue; // Comment
                     if (s[0] == '%') continue; // Comment
                     char * t = strtok(s, delims);
-                    vid_t from = atoi(t);
+                    vid_t from = atoll(t);
                     t = strtok(NULL,delims);
                     if (t != NULL) {
-                        vid_t num = atoi(t);
+                        vid_t num = atoll(t);
                         
                         // Read next line
                         linenum += num + 1;
                         for(vid_t i=0; i < num; i++) {
                             s = fgets(s, maxlen, inf);
                             FIXLINE(s);
-                            vid_t to = atoi(s);
+                            vid_t to = atoll(s);
                             if (from != to) {
                                 sharderobj.preprocessing_add_edge(from, to, EdgeDataType());
                             }
@@ -609,7 +609,7 @@ namespace graphchi {
      * see sharder.hpp for more information.
      */
     template <typename EdgeDataType, typename FinalEdgeDataType>
-    int convert(std::string basefilename, std::string nshards_string) {
+    long convert(std::string basefilename, std::string nshards_string) {
         sharder<EdgeDataType, FinalEdgeDataType> sharderobj(basefilename);
         
         std::string file_type_str = get_option_string_interactive("filetype", "edgelist, adjlist, binedgelist, metis");
@@ -646,7 +646,7 @@ namespace graphchi {
             sharderobj.set_max_vertex_id(max_vertex_id);
         }
         
-        int nshards = sharderobj.execute_sharding(nshards_string);
+        long nshards = sharderobj.execute_sharding(nshards_string);
         logstream(LOG_INFO) << "Successfully finished sharding for " << basefilename << std::endl;
         logstream(LOG_INFO) << "Created " << nshards << " shards." << std::endl;
         return nshards;
@@ -657,8 +657,8 @@ namespace graphchi {
      * Converts a graph input to shards with no edge values. Preprocessing has several steps,
      * see sharder.hpp for more information.
      */
-    static int VARIABLE_IS_NOT_USED convert_none(std::string basefilename, std::string nshards_string);
-    static int VARIABLE_IS_NOT_USED convert_none(std::string basefilename, std::string nshards_string) {
+    static long VARIABLE_IS_NOT_USED convert_none(std::string basefilename, std::string nshards_string);
+    static long VARIABLE_IS_NOT_USED convert_none(std::string basefilename, std::string nshards_string) {
         sharder<dummy> sharderobj(basefilename);
         sharderobj.set_no_edgevalues();
         
@@ -696,15 +696,15 @@ namespace graphchi {
             sharderobj.set_max_vertex_id(max_vertex_id);
         }
         
-        int nshards = sharderobj.execute_sharding(nshards_string);
+        long nshards = sharderobj.execute_sharding(nshards_string);
         logstream(LOG_INFO) << "Successfully finished sharding for " << basefilename  << std::endl;
         logstream(LOG_INFO) << "Created " << nshards << " shards." << std::endl;
         return nshards;
     }
     
     template <typename EdgeDataType>
-    int convert_if_notexists_novalues(std::string basefilename, std::string nshards_string, bool &didexist) {
-        int nshards;
+    long convert_if_notexists_novalues(std::string basefilename, std::string nshards_string, bool &didexist) {
+        long nshards;
         
         /* Check if input file is already sharded */
         if ((nshards = find_shards<EdgeDataType>(basefilename, nshards_string))) {
@@ -726,8 +726,8 @@ namespace graphchi {
     }
     
     template <typename EdgeDataType>
-    int convert_if_notexists(std::string basefilename, std::string nshards_string, bool &didexist) {
-        int nshards;
+    long convert_if_notexists(std::string basefilename, std::string nshards_string, bool &didexist) {
+        long nshards;
         
         /* Check if input file is already sharded */
         if ((nshards = find_shards<EdgeDataType>(basefilename, nshards_string))) {
@@ -750,8 +750,8 @@ namespace graphchi {
     
     // First type is for the input phase, second is what is needed in computation
     template <typename EdgeDataType, typename FinalEdgeType>
-    int convert_if_notexists(std::string basefilename, std::string nshards_string, bool &didexist) {
-        int nshards;
+    long convert_if_notexists(std::string basefilename, std::string nshards_string, bool &didexist) {
+        long nshards;
         
         /* Check if input file is already sharded */
         if ((nshards = find_shards<FinalEdgeType>(basefilename, nshards_string))) {
@@ -772,19 +772,19 @@ namespace graphchi {
     }
     
     template <typename EdgeDataType, typename FinalEdgeType>
-    int convert_if_notexists(std::string basefilename, std::string nshards_string) {
+    long convert_if_notexists(std::string basefilename, std::string nshards_string) {
         bool b;
         return convert_if_notexists<EdgeDataType, FinalEdgeType>(basefilename, nshards_string, b);
     }
     
     template <typename EdgeDataType>
-    int convert_if_notexists(std::string basefilename, std::string nshards_string) {
+    long convert_if_notexists(std::string basefilename, std::string nshards_string) {
         bool b;
         return convert_if_notexists<EdgeDataType, EdgeDataType>(basefilename, nshards_string, b);
     }
     
     template <typename EdgeDataType>
-    int convert_if_notexists_novalues(std::string basefilename, std::string nshards_string) {
+    long convert_if_notexists_novalues(std::string basefilename, std::string nshards_string) {
         bool b;
         return convert_if_notexists_novalues<EdgeDataType>(basefilename, nshards_string, b);
     }

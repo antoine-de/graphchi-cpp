@@ -170,7 +170,7 @@ namespace graphchi {
         int deleted_outc;
 #endif
         
-        
+
         internal_graphchi_vertex() : inc(0), outc(0) {
 #ifdef SUPPORT_DELETIONS
             deleted_outc = deleted_inc = 0;

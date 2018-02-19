@@ -373,6 +373,7 @@ namespace graphchi {
         // Compute a hash for filename which is used for
         // permuting the stripes. It is important the permutation
         // is same regardless of when the file is opened.
+        __attribute((no_sanitize("integer")))
         int hash(std::string filename) {
             const char * cstr = filename.c_str();
             int hash = 1;

@@ -131,7 +131,7 @@ namespace graphchi {
     }
     
     
-    static std::string filename_shard_edata_block(std::string edata_shardname, int blockid, size_t blocksize) {
+    static std::string filename_shard_edata_block(std::string edata_shardname, size_t blockid, size_t blocksize) {
         std::stringstream ss;
         ss << dirname_shard_edata_block(edata_shardname, blocksize);
         ss << "/";
