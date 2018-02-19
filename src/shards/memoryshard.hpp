@@ -61,16 +61,16 @@ namespace graphchi {
         std::string filename_edata;
         std::string filename_adj;
         
-        vid_t range_st;
-        vid_t range_end;
-        size_t adjfilesize;
-        size_t edatafilesize;
+        vid_t range_st = 0;
+        vid_t range_end = 0;
+        size_t adjfilesize = 0;
+        size_t edatafilesize = 0;
         
-        vid_t streaming_offset_vid;
-        size_t streaming_offset; // The offset where streaming should continue
-        size_t range_start_offset; // First byte for this range's vertices (used for writing only outedges)
-        size_t range_start_edge_ptr;
-        size_t streaming_offset_edge_ptr;
+        vid_t streaming_offset_vid = 0;
+        size_t streaming_offset = 0; // The offset where streaming should continue
+        size_t range_start_offset = 0; // First byte for this range's vertices (used for writing only outedges)
+        size_t range_start_edge_ptr = 0;
+        size_t streaming_offset_edge_ptr = 0;
         uint8_t * adjdata;
         char ** edgedata;
         int * doneptr;
@@ -398,14 +398,14 @@ namespace graphchi {
             }
 
 #pragma omp parallel for schedule(dynamic, 1)
-            for(int chunk=0; chunk < (int)index.size(); chunk++) {
+            for(size_t chunk=0; chunk < index.size(); chunk++) {
                 /* Parallelized loading of adjacency data ... */
                 uint8_t * ptr = adjdata + index[chunk].filepos;
-                uint8_t * end = adjdata + (chunk < (int) index.size() - 1 ? index[chunk + 1].filepos :  adjfilesize);
+                uint8_t * end = adjdata + (chunk < index.size() - 1 ? index[chunk + 1].filepos :  adjfilesize);
                 vid_t vid = index[chunk].vertexid;
-                vid_t viden = (chunk < (int) index.size() - 1 ? index[chunk + 1].vertexid :  std::numeric_limits<vid_t>::max());
+                vid_t viden = (chunk < index.size() - 1 ? index[chunk + 1].vertexid :  std::numeric_limits<vid_t>::max());
                 size_t edgeptr = index[chunk].edgecounter * sizeof(ET);
-                size_t edgeptr_end =  (chunk < (int) index.size() - 1 ? index[chunk + 1].edgecounter * sizeof(ET) : edatafilesize);
+                size_t edgeptr_end =  (chunk < index.size() - 1 ? index[chunk + 1].edgecounter * sizeof(ET) : edatafilesize);
 
                 bool contains_range_end = vid < range_end && viden > range_end;
                 bool contains_range_st = vid <= range_st && viden > range_st;
@@ -418,7 +418,7 @@ namespace graphchi {
                 
                 if (!async_edata_loading && !only_adjacency) {
                     /* Wait until blocks loaded (non-asynchronous version) */
-                    for(int blid=(int)edgeptr/blocksize; blid<=(int)(edgeptr_end /blocksize); blid++) {
+                    for(size_t blid=(size_t)edgeptr/blocksize; blid<=(size_t)(edgeptr_end /blocksize); blid++) {
                         if (blid < nblocks) {
                             while(doneptr[blid] != 0) { usleep(10); }
                         }
@@ -446,7 +446,7 @@ namespace graphchi {
                     }
                     
                     uint8_t ns = *ptr;
-                    int n;
+                    int64_t n;
                     
                     ptr += sizeof(uint8_t);
                     
@@ -473,7 +473,7 @@ namespace graphchi {
                     }
                     bool any_edges = false;
                     while(--n>=0) {
-                        int blockid = (int) (edgeptr / blocksize);
+                        size_t blockid = (size_t) (edgeptr / blocksize);
                        
                         vid_t target = *((vid_t*) ptr);
                         ptr += sizeof(vid_t);
