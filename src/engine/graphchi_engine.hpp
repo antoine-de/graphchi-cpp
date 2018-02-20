@@ -213,7 +213,7 @@ namespace graphchi {
                 delete memoryshard;
                 memoryshard = NULL;
             }
-            for(int i=0; i < (int)sliding_shards.size(); i++) {
+            for(size_t i=0; i < sliding_shards.size(); i++) {
                 if (sliding_shards[i] != NULL) {
                     delete sliding_shards[i];
                 }
@@ -257,7 +257,7 @@ namespace graphchi {
         
         virtual void initialize_sliding_shards() {
             assert(sliding_shards.size() == 0);
-            for(int p=0; p < nshards; p++) {
+            for(long p=0; p < nshards; p++) {
 #ifndef DYNAMICEDATA
                 std::string edata_filename = filename_shard_edata<EdgeDataType>(base_filename, p, nshards);
                 std::string adj_filename = filename_shard_adj(base_filename, p, nshards);
@@ -313,8 +313,8 @@ namespace graphchi {
                 return maxvid;
             } else {
                 size_t memreq = 0;
-                int max_interval = maxvid - fromvid;
-                for(int i=0; i < max_interval; i++) {
+                long max_interval = maxvid - fromvid;
+                for(long i=0; i < max_interval; i++) {
                     degree deg = degree_handler->get_degree(fromvid + i);
                     int inc = deg.indegree;
                     int outc = deg.outdegree * (!disable_outedges);
@@ -336,9 +336,9 @@ namespace graphchi {
          */
         size_t num_edges_subinterval(vid_t st, vid_t en) {
             size_t num_edges = 0;
-            int nvertices = en - st + 1;
+            long nvertices = en - st + 1;
             if (scheduler != NULL) {
-                for(int i=0; i < nvertices; i++) {
+                for(long i=0; i < nvertices; i++) {
                     bool is_sched = scheduler->is_scheduled(st + i);
                     if (is_sched) {
                         degree d = degree_handler->get_degree(st + i);
@@ -346,7 +346,7 @@ namespace graphchi {
                     }
                 }
             } else {
-                for(int i=0; i < nvertices; i++) {
+                for(long i=0; i < nvertices; i++) {
                     degree d = degree_handler->get_degree(st + i);
                     num_edges += d.indegree * store_inedges + d.outdegree;
                 }
@@ -360,7 +360,7 @@ namespace graphchi {
        
             
 #pragma omp parallel for schedule(dynamic, 1)
-            for(int p=-1; p < nshards; p++)  {
+            for(long p=-1; p < nshards; p++)  {
                 if (p==(-1)) {
                     /* Load memory shard - is internally parallelized */
                     if (!memoryshard->loaded()) {
@@ -381,7 +381,7 @@ namespace graphchi {
                             if (randomization) {
                               sliding_shards[p]->set_disable_async_writes(true); // Cannot write async if we use randomization, because async assumes we can write previous vertices edgedata because we won't touch them this iteration  
                             }
-                            sliding_shards[p]->read_next_vertices((int) vertices.size(), sub_interval_st, vertices,
+                            sliding_shards[p]->read_next_vertices(vertices.size(), sub_interval_st, vertices,
                                                                   (randomization || scheduler != NULL) && chicontext.iteration == 0);
                             
                         }
@@ -398,14 +398,14 @@ namespace graphchi {
             metrics_entry me = m.start_time();
             size_t nvertices = vertices.size();
             if (!enable_deterministic_parallelism) {
-                for(int i=0; i < (int)nvertices; i++) vertices[i].parallel_safe = true;
+                for(long i=0; i < nvertices; i++) vertices[i].parallel_safe = true;
             }
-            int sub_interval_len = sub_interval_en - sub_interval_st;
+            long sub_interval_len = sub_interval_en - sub_interval_st;
 
             std::vector<vid_t> random_order(randomization ? sub_interval_len + 1 : 0);
             if (randomization) {
                 // Randomize vertex-vector
-                for(int idx=0; idx <= (int)sub_interval_len; idx++) random_order[idx] = idx;
+                for(long idx=0; idx <= sub_interval_len; idx++) random_order[idx] = idx;
                 std::random_shuffle(random_order.begin(), random_order.end());
             }
              
@@ -417,7 +417,7 @@ namespace graphchi {
         #pragma omp section
                         {
         #pragma omp parallel for
-                        for(int idx=0; idx <= (int)sub_interval_len; idx++) {
+                        for(long idx=0; idx <= sub_interval_len; idx++) {
                                 vid_t vid = sub_interval_st + (randomization ? random_order[idx] : idx);
                                 svertex_t & v = vertices[vid - sub_interval_st];
                                 
@@ -433,7 +433,7 @@ namespace graphchi {
                         {
                             if (exec_threads > 1 && enable_deterministic_parallelism) {
                                 int nonsafe_count = 0;
-                                for(int idx=0; idx <= (int)sub_interval_len; idx++) {
+                                for(long idx=0; idx <= sub_interval_len; idx++) {
                                     vid_t vid = sub_interval_st + (randomization ? random_order[idx] : idx);
                                     svertex_t & v = vertices[vid - sub_interval_st];
                                     if (!v.parallel_safe && v.scheduled) {
@@ -471,7 +471,7 @@ namespace graphchi {
                 chicontext.iteration = iter;
                 if (iter > 0) // First one run before -- ugly
                     userprogram.before_iteration(iter, chicontext);
-                userprogram.before_exec_interval(0, (int)num_vertices(), chicontext);
+                userprogram.before_exec_interval(0, num_vertices(), chicontext);
                 
                 if (use_selective_scheduling) {
                     if (iter > 0 && !scheduler->has_new_tasks) {
@@ -482,7 +482,7 @@ namespace graphchi {
                     scheduler->new_iteration(iter);
                     
                     bool newtasks = false;
-                    for(int i=0; i < (int)vertices.size(); i++) { // Could, should parallelize
+                    for(size_t i=0; i < vertices.size(); i++) { // Could, should parallelize
                         if (iter == 0 || scheduler->is_scheduled(i)) {
                             vertices[i].scheduled =  true;
                             newtasks = true;
@@ -541,7 +541,7 @@ namespace graphchi {
             
             /* Assign vertex edge array pointers */
             size_t ecounter = 0;
-            for(int i=0; i < (int)nvertices; i++) {
+            for(long i=0; i < nvertices; i++) {
                 degree d = degree_handler->get_degree(sub_interval_st + i);
                 int inc = d.indegree;
                 int outc = d.outdegree * (!disable_outedges);
@@ -575,7 +575,7 @@ namespace graphchi {
             if (disable_vertexdata_storage) return;
             size_t nvertices = vertices.size();
             bool modified_any_vertex = false;
-            for(int i=0; i < (int)nvertices; i++) {
+            for(long i=0; i < nvertices; i++) {
                 if (vertices[i].modified) {
                     modified_any_vertex = true;
                     break;
@@ -755,7 +755,7 @@ namespace graphchi {
             if (sliding_shards.size() == 0) {
                 initialize_sliding_shards();
                 if (initialize_edges_before_run) {
-                    for(int j=0; j<(int)sliding_shards.size(); j++) sliding_shards[j]->initdata();
+                    for(size_t j=0; j<sliding_shards.size(); j++) sliding_shards[j]->initdata();
                 }
             } else {
                 logstream(LOG_DEBUG) << "Engine being restarted, do not reinitialize." << std::endl;
@@ -817,19 +817,19 @@ namespace graphchi {
                 std::vector<int> intshuffle(nshards);
                 
                 if (randomization) {
-                    for(int i=0; i<nshards; i++) intshuffle[i] = i;
+                    for(long i=0; i<nshards; i++) intshuffle[i] = i;
                     std::random_shuffle(intshuffle.begin(), intshuffle.end());
                 }
                 
                 /* Interval loop */
-                for(int interval_idx=0; interval_idx < nshards; ++interval_idx) {
+                for(long interval_idx=0; interval_idx < nshards; ++interval_idx) {
                     exec_interval = interval_idx;
                     
                     if (randomization && iter > 0) { // NOTE: only randomize shard order after first iteration so we can compute indices
                         exec_interval = intshuffle[interval_idx];
                         // Hack to make system work if we jump backwards
                        // if (interval_idx > 0 && last_exec_interval> exec_interval) {
-                            for(int p=0; p<nshards; p++) {
+                            for(long p=0; p<nshards; p++) {
                                 sliding_shards[p]->flush();
                                 sliding_shards[p]->set_offset(0, 0, 0);
                             }
@@ -880,7 +880,7 @@ namespace graphchi {
                         }
                         
                         /* Initialize vertices */
-                        int nvertices = sub_interval_en - sub_interval_st + 1;
+                        long nvertices = sub_interval_en - sub_interval_st + 1;
                         graphchi_edge<EdgeDataType> * edata = NULL;
                         
                         std::vector<svertex_t> vertices(nvertices, svertex_t());
@@ -940,7 +940,7 @@ namespace graphchi {
                 
                 /* Move the sliding shard of the current interval to correct position and flush
                  writes of all shards for next iteration. */
-                for(int p=0; p<nshards; p++) {
+                for(long p=0; p<nshards; p++) {
                     sliding_shards[p]->flush();
                     sliding_shards[p]->set_offset(0, 0, 0);
                 }
@@ -975,7 +975,7 @@ namespace graphchi {
             m.set("niters", niters);
             
             // Close outputs
-            for(int i=0; i< (int)outputs.size(); i++) {
+            for(size_t i=0; i< outputs.size(); i++) {
                 outputs[i]->close();
             }   
             outputs.clear();

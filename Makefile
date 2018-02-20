@@ -1,14 +1,15 @@
 INCFLAGS = -I/usr/local/include/ -I./src/
 
 CPP = clang++
-CPPFLAGS = -g $(INCFLAGS) -fopenmp=libomp -Wall -Wno-strict-aliasing -fsanitize=integer 
+CPPFLAGS = -g $(INCFLAGS) -fopenmp=libomp -Wall -Wextra -Wno-strict-aliasing -fsanitize=undefined 
 LINKERFLAGS = -lz
 DEBUGFLAGS = -g -ggdb $(INCFLAGS)
 HEADERS=$(shell find . -name '*.hpp')
 
 
 all: apps tests 
-pagerank: example_apps/pagerank example_apps/pagerank_functional
+pagerank: example_apps/pagerank
+functional: example_apps/pagerank_functional
 apps: example_apps/connectedcomponents example_apps/pagerank example_apps/pagerank_functional example_apps/communitydetection example_apps/unionfind_connectedcomps example_apps/stronglyconnectedcomponents example_apps/trianglecounting example_apps/randomwalks example_apps/minimumspanningforest
 als: example_apps/matrix_factorization/als_edgefactors  example_apps/matrix_factorization/als_vertices_inmem
 tests: tests/basic_smoketest tests/bulksync_functional_test tests/dynamicdata_smoketest tests/test_dynamicedata_loader

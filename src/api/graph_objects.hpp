@@ -313,6 +313,7 @@ namespace graphchi {
           * stored on disk.
           */
         virtual void set_data(VertexDataType d) {
+            std::cout << "update data" <<std::endl;
             *(this->dataptr) = d;
             this->modified = true;
         }
