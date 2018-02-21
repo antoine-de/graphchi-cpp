@@ -412,7 +412,7 @@ namespace graphchi {
                 
                 // TODO: skip unscheduled vertices.
                 
-                int n;
+                int64_t n;
                 if (record_index && (size_t)(curvid - lastrec) >= (size_t) std::max((vid_t)100000, nvecs/16)) {
                     save_offset();
                     lastrec = curvid;

@@ -110,6 +110,7 @@ namespace graphchi {
     
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int val);
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int val) {
+        assert(false); //cannot work
         return 0xffffffff == (unsigned int)val;
     }
     
@@ -146,16 +147,21 @@ namespace graphchi {
     class internal_graphchi_vertex {
         
     public:   // Todo, use friend
-        volatile int inc = 0;
-        volatile int outc = 0;
+        // volatile int inc = 0;
+        // volatile int outc = 0;
         
         vid_t vertexid = 0;
 
     protected:
-        graphchi_edge<EdgeDataType> * inedges_ptr = nullptr;
-        graphchi_edge<EdgeDataType> * outedges_ptr = nullptr;
-        
-                
+        // graphchi_edge<EdgeDataType> * inedges_ptr = nullptr;
+        // graphchi_edge<EdgeDataType> * outedges_ptr = nullptr;
+        std::vector<graphchi_edge<EdgeDataType>> in_edges;
+        std::vector<graphchi_edge<EdgeDataType>> out_edges;
+        size_t nb_in_edges = 0; // sometimes we don't want to store the edges, just their number
+        size_t nb_out_edges = 0;
+        bool store_in_edges = true; // TODO use something more compact
+        bool store_out_edges = true;
+
     public:
         bool modified = false;
         VertexDataType * dataptr = nullptr;
@@ -171,19 +177,32 @@ namespace graphchi {
 #endif
         
         
-        internal_graphchi_vertex() : inc(0), outc(0) {
+        internal_graphchi_vertex(): dataptr(nullptr){
 #ifdef SUPPORT_DELETIONS
             deleted_outc = deleted_inc = 0;
 #endif
-            dataptr = NULL;
         }
         
+        internal_graphchi_vertex(vid_t _id) : vertexid(_id), store_in_edges(false), store_out_edges(false) {
+        }
         
-        internal_graphchi_vertex(vid_t _id, graphchi_edge<EdgeDataType> * iptr, 
-                                graphchi_edge<EdgeDataType> * optr, 
+        internal_graphchi_vertex(vid_t _id,
                                  int indeg, 
-                                 int outdeg) : 
-                            vertexid(_id), inedges_ptr(iptr), outedges_ptr(optr) {
+                                 int outdeg) : vertexid(_id), nb_out_edges(outdeg) {
+            in_edges.reserve(indeg);
+            out_edges.reserve(outdeg);
+        }
+
+        internal_graphchi_vertex(vid_t _id,
+                                 int indeg, 
+                                 int outdeg, bool disable_outedge): 
+                                 vertexid(_id), 
+                                 nb_out_edges(outdeg), 
+                                 store_out_edges(! disable_outedge) {
+            in_edges.reserve(indeg);
+            if (!disable_outedge) {
+                out_edges.reserve(outdeg);
+            }
         }
         
         virtual ~internal_graphchi_vertex() {}
@@ -193,15 +212,21 @@ namespace graphchi {
             return vertexid;
         }
         
-        int num_inedges() const { 
-            return inc; 
+        size_t num_inedges() const { 
+            if (store_in_edges) {
+                return in_edges.size();
+            }
+            return nb_in_edges; 
             
         }
-        int num_outedges() const { 
-            return outc; 
+        size_t num_outedges() const {
+            if (store_out_edges) {
+                return out_edges.size();
+            }
+            return nb_out_edges; 
         }
-        int num_edges() const { 
-            return inc + outc; 
+        size_t num_edges() const { 
+            return num_inedges() + num_outedges(); 
         }
 
 
@@ -210,19 +235,23 @@ namespace graphchi {
         // Optimization: as only memshard (not streaming shard) creates inedgers,
         // we do not need atomic instructions here!
         inline void add_inedge(vid_t src, EdgeDataType * ptr, bool special_edge) {
+            assert(src != vertexid);
 #ifdef SUPPORT_DELETIONS
-            if (inedges_ptr != NULL && is_deleted_edge_value(*ptr)) {
-                deleted_inc++;
+            // if (inedges_ptr != NULL && is_deleted_edge_value(*ptr)) {
+            //     deleted_inc++;
+            //     return;
+            // }
+#endif
+            if (!store_in_edges) {
+                nb_in_edges ++;
                 return;
             }
-#endif
-            // int i = __sync_add_and_fetch(&inc, 1);
-            int i = ++inc;
-            if (inedges_ptr != NULL) {
-                inedges_ptr[i - 1] = graphchi_edge<EdgeDataType>(src, ptr);
+            if (in_edges.capacity() <= in_edges.size()) {
+                std::cout << "pb for vertex " << vertexid << " in capa = " << in_edges.capacity()  << " size " << in_edges.size() << std::endl;
             }
+        //    assert(in_edges.capacity() < in_edges.size()); // we newer want to resize
+            in_edges.push_back(graphchi_edge<EdgeDataType>(src, ptr));
             
-            assert(src != vertexid);
           /*  if(inedges_ptr != NULL && inc > outedges_ptr - inedges_ptr) {
                 logstream(LOG_FATAL) << "Tried to add more in-edges as the stored in-degree of this vertex (" << src << "). Perhaps a preprocessing step had failed?" << std::endl;
                 assert(inc <= outedges_ptr - inedges_ptr);
@@ -236,8 +265,15 @@ namespace graphchi {
                 return;
             }
 #endif
-            int i = __sync_add_and_fetch(&outc, 1);
-            if (outedges_ptr != NULL) outedges_ptr[i - 1] = graphchi_edge<EdgeDataType>(dst, ptr);
+            if (!store_out_edges) {
+                nb_out_edges ++;
+                return;
+            }
+            if (out_edges.capacity() <= out_edges.size()) {
+                std::cout << "pb for vertex " << vertexid << " out capa = " << out_edges.capacity()  << std::endl;
+            }
+        //    assert(out_edges.capacity() < out_edges.size()); // we newer want to resize
+            out_edges.push_back(graphchi_edge<EdgeDataType>(dst, ptr));
             assert(dst != vertexid);
         }
         
@@ -251,38 +287,40 @@ namespace graphchi {
         
         graphchi_vertex() : internal_graphchi_vertex<VertexDataType, EdgeDataType>() { }
         
-        graphchi_vertex(vid_t _id, 
-                        graphchi_edge<EdgeDataType> * iptr, 
-                                 graphchi_edge<EdgeDataType> * optr, 
+        graphchi_vertex(vid_t _id,
                         int indeg, 
-                        int outdeg) : 
-            internal_graphchi_vertex<VertexDataType, EdgeDataType>(_id, iptr, optr, indeg, outdeg) {}
-        
+                        int outdeg,
+                        bool disable_out_edges) : 
+            internal_graphchi_vertex<VertexDataType, EdgeDataType>(_id, indeg, outdeg, disable_out_edges) {}
+
+        graphchi_vertex(vid_t _id) : 
+            internal_graphchi_vertex<VertexDataType, EdgeDataType>(_id) {}
+
         virtual ~graphchi_vertex() {}
         
         /** 
           * Returns ith edge of a vertex, ignoring 
           * edge direction.
           */
-        graphchi_edge<EdgeDataType> * edge(int i) {
+        graphchi_edge<EdgeDataType> * edge(size_t i) {
             if (i < this->inc) return inedge(i);
             else return outedge(i - this->inc);
         }
 
         
-        graphchi_edge<EdgeDataType> * inedge(int i) {
-            assert(i >= 0 && i < this->inc);
-            return &this->inedges_ptr[i];
+        graphchi_edge<EdgeDataType> * inedge(size_t i) {
+            assert(i >= 0 && i < this->in_edges.size());
+            return &this->in_edges[i];
         }
         
-        graphchi_edge<EdgeDataType> * outedge(int i) {
-            assert(i >= 0 && i < this->outc);
-            return &this->outedges_ptr[i];
+        graphchi_edge<EdgeDataType> * outedge(size_t i) {
+            assert(i >= 0 && i < this->out_edges.size());
+            return &this->out_edges[i];
         }        
         
         graphchi_edge<EdgeDataType> * random_outedge() {
-            if (this->outc == 0) return NULL;
-            return outedge((int) (std::abs(random()) % this->outc));
+            if (this->out_edges.empty()) return NULL;
+            return outedge((std::abs(random()) % this->out_edges.size()));
         }
             
         /** 
@@ -323,20 +361,21 @@ namespace graphchi {
          * about the in/out direction of an edge. Do use only if you
          * ignore the edge direction.
          */
-        void VARIABLE_IS_NOT_USED sort_edges_indirect() {
-            // Check for deleted edges first...
-            if (this->inc != (this->outedges_ptr - this->inedges_ptr)) {
-                // Moving
-                memmove(&this->inedges_ptr[this->inc], this->outedges_ptr, this->outc * sizeof(graphchi_edge<EdgeDataType>));
-                this->outedges_ptr = &this->inedges_ptr[this->inc];
-            }
-            quickSort(this->inedges_ptr, (int) (this->inc + this->outc), eptr_less<EdgeDataType>);
+        // void VARIABLE_IS_NOT_USED sort_edges_indirect() {
+        //     // Check for deleted edges first...
+        //     if (this->inc != (this->outedges_ptr - this->inedges_ptr)) {
+        //         // Moving
+        //         memmove(&this->inedges_ptr[this->inc], this->outedges_ptr, this->outc * sizeof(graphchi_edge<EdgeDataType>));
+        //         this->outedges_ptr = &this->inedges_ptr[this->inc];
+        //     }
+        //     quickSort(this->inedges_ptr, (int) (this->inc + this->outc), eptr_less<EdgeDataType>);
             
-        }
+        // }
         
         
 #ifdef SUPPORT_DELETIONS
         void VARIABLE_IS_NOT_USED remove_edge(int i) {
+            do not compil
             remove_edgev(edge(i));
         }
         

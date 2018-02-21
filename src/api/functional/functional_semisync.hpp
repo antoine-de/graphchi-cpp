@@ -72,14 +72,10 @@ public:
         gcontext = &ginfo;
     }
     
-    functional_vertex_unweighted_semisync(vid_t _id, 
-                                 graphchi_edge<ET> * iptr, 
-                                 graphchi_edge<ET> * optr, 
-                                 int indeg, 
-                                 int outdeg) {
-        assert(false); // This should never be called.
+    size_t num_edges() const { 
+        return inc + outc; 
     }
-    
+
     void first_iteration(graphchi_context &gcontext_) {
         this->set_data(kernel.initial_value(gcontext_, vinfo));
     }

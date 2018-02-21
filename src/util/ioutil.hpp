@@ -39,9 +39,9 @@
 template <typename T>
 void preada(int f, T * tbuf, size_t nbytes, size_t off) {
     size_t nread = 0;
-    char * buf = (char*)tbuf;
+    T* buf = tbuf;
     while(nread<nbytes) {
-        ssize_t a = pread(f, buf, nbytes - nread, off + nread);
+        ssize_t a = pread64(f, buf, nbytes - nread, off + nread);
         if (a == (-1)) {
             std::cout << "Error, could not read: " << strerror(errno) << "; file-desc: " << f << std::endl;
             std::cout << "Pread arguments: " << f << " tbuf: " << tbuf << " nbytes: " << nbytes << " off: " << off << std::endl;
@@ -57,9 +57,9 @@ void preada(int f, T * tbuf, size_t nbytes, size_t off) {
 template <typename T>
 void preada_trunc(int f, T * tbuf, size_t nbytes, size_t off) {
     size_t nread = 0;
-    char * buf = (char*)tbuf;
+    T* buf = tbuf;
     while(nread<nbytes) {
-        size_t a = pread(f, buf, nbytes-nread, off+nread);
+        size_t a = pread64(f, buf, nbytes-nread, off+nread);
         if (a == 0) {
             // set rest to 0
      //       std::cout << "WARNING: file was not long enough - filled with zeros. " << std::endl;
@@ -85,9 +85,9 @@ template <typename T>
 void pwritea(int f, T * tbuf, size_t nbytes, size_t off) {
     size_t nwritten = 0;
     assert(f>0);
-    char * buf = (char*)tbuf;
+    T* buf = tbuf;
     while(nwritten<nbytes) {
-        size_t a = pwrite(f, buf, nbytes-nwritten, off+nwritten);
+        size_t a = pwrite64(f, buf, nbytes-nwritten, off+nwritten);
         if (a == size_t(-1)) {
             logstream(LOG_ERROR) << "f:" << f << " nbytes: " << nbytes << " written: " << nwritten << " off:" << 
                 off << " f: " << f << " error:" <<  strerror(errno) << std::endl;
@@ -149,7 +149,7 @@ size_t write_compressed(int f, T * tbuf, size_t nbytes) {
     int ret;
     unsigned have;
     z_stream strm;
-    int CHUNK = (int) std::max((size_t)1024 * 1024, nbytes);
+    size_t CHUNK = std::max(1024ul * 1024ul, nbytes);
     unsigned char * out = (unsigned char *) malloc(CHUNK);
     lseek(f, 0, SEEK_SET);
 
@@ -206,7 +206,7 @@ void read_compressed(int f, T * tbuf, size_t nbytes) {
     int ret;
     unsigned have;
     z_stream strm;
-    int CHUNK = (int) std::max((size_t)1024 * 1024, nbytes);
+    size_t CHUNK = std::max(1024ul * 1024ul, nbytes);
 
     size_t fsize = lseek(f, 0, SEEK_END);
     

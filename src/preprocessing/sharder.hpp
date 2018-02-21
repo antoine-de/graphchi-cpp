@@ -1041,7 +1041,7 @@ namespace graphchi {
             }
 
             graphchi_context ginfo;
-            ginfo.nvertices = 1 + intervals[nshards - 1].second;
+            ginfo.nvertices = 1ul + intervals[nshards - 1].second;
             ginfo.scheduler = NULL;
 
             std::string outputfname = filename_degree_data(basefilename);
@@ -1051,7 +1051,7 @@ namespace graphchi {
                 logstream(LOG_ERROR) << "Could not create: " << degreeOutF << std::endl;
             }
             assert(degreeOutF >= 0);
-            int trerr = ftruncate(degreeOutF, ginfo.nvertices * sizeof(int) * 2);
+            int trerr = ftruncate64(degreeOutF, ginfo.nvertices * sizeof(int) * 2);
             assert(trerr == 0);
             if (trerr != 0) {
                 logstream(LOG_FATAL) << "Could not truncate!" << std::endl;
@@ -1087,11 +1087,12 @@ namespace graphchi {
                     /* Preallocate vertices */
                     metrics_entry men = m.start_time();
                     vid_t nvertices = subinterval_en - subinterval_st + 1;
-                    std::vector< graphchi_vertex<vid_t, dummy_t> > vertices(nvertices, graphchi_vertex<vid_t, dummy_t>()); // preallocate
-
+                    logstream(LOG_INFO) << "nb vertices = " << nvertices << std::endl;
+                    std::vector< graphchi_vertex<vid_t, dummy_t> > vertices;
+                    vertices.reserve(nvertices);
 
                     for(vid_t i=0; i < nvertices; i++) {
-                        vertices[i] = graphchi_vertex<vid_t, dummy_t>(subinterval_st + i, NULL, NULL, 0, 0);
+                        vertices[i] = graphchi_vertex<vid_t, dummy_t>(subinterval_st + i);
                         vertices[i].scheduled =  true;
                     }
 

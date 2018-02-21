@@ -44,8 +44,8 @@ namespace graphchi {
     
     struct graphchi_context {
 
-        size_t nvertices;
-        size_t nedges;
+        size_t nvertices = 0;
+        size_t nedges = 0;
         
         ischeduler * scheduler;
         int iteration;

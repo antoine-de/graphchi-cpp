@@ -383,7 +383,7 @@ namespace graphchi {
                             if (randomization) {
                               sliding_shards[p]->set_disable_async_writes(true); // Cannot write async if we use randomization, because async assumes we can write previous vertices edgedata because we won't touch them this iteration  
                             }
-                            sliding_shards[p]->read_next_vertices((int) vertices.size(), sub_interval_st, vertices,
+                            sliding_shards[p]->read_next_vertices(vertices.size(), sub_interval_st, vertices,
                                                                   (randomization || scheduler != NULL) && chicontext.iteration == 0);
                             
                         }
@@ -420,11 +420,11 @@ namespace graphchi {
                     {
         #pragma omp section
                         {
-//        #pragma omp parallel for
+       #pragma omp parallel for
                         for(vid_t idx=0; idx <= sub_interval_len; idx++) {
                             assert(sub_interval_en >= sub_interval_st);
                                 vid_t vid = sub_interval_st + (randomization ? random_order[idx] : idx);
-                                assert(vid >= sub_interval_st || false);
+                                assert(vid >= sub_interval_st);
                                 svertex_t & v = vertices[vid - sub_interval_st];
                                 
                                 if (exec_threads == 1 || v.parallel_safe) {
@@ -493,7 +493,7 @@ namespace graphchi {
                             vertices[i].scheduled =  true;
                             newtasks = true;
                             nupdates++;
-                            work += vertices[i].inc + vertices[i].outc;
+                            work += vertices[i].num_edges();
                         } else {
                             vertices[i].scheduled = false;
                         }
@@ -536,29 +536,19 @@ namespace graphchi {
         }
         
 
-        virtual void init_vertices(std::vector<svertex_t> &vertices, graphchi_edge<EdgeDataType> * &edata) {
+        virtual void init_vertices(std::vector<svertex_t> &vertices) {
             size_t nvertices = vertices.size();
             
             /* Compute number of edges */
             size_t num_edges = num_edges_subinterval(sub_interval_st, sub_interval_en);
-            
-            /* Allocate edge buffer */
-            std::cout << "allocating " << num_edges << " edges for " << num_edges * sizeof(graphchi_edge<EdgeDataType>) << std::endl;
-            edata = (graphchi_edge<EdgeDataType>*) malloc(num_edges * sizeof(graphchi_edge<EdgeDataType>));
             
             /* Assign vertex edge array pointers */
             size_t ecounter = 0;
             for(size_t i=0; i < nvertices; i++) {
                 degree d = degree_handler->get_degree(sub_interval_st + i);
                 int inc = d.indegree;
-                int outc = d.outdegree * (!disable_outedges);
-                vertices[i] = svertex_t(sub_interval_st + i, &edata[ecounter], 
-                                        &edata[ecounter + inc * store_inedges], inc, outc);
-                
-                /* Store correct out-degree even if out-edge loading disabled */
-                if (disable_outedges) {
-                    vertices[i].outc = d.outdegree;
-                }
+                int outc = d.outdegree;
+                vertices[i] = svertex_t(sub_interval_st + i, inc, outc, disable_outedges);
                 
                 if (scheduler != NULL) {
                     bool is_sched = ( scheduler->is_scheduled(sub_interval_st + i));
@@ -891,12 +881,10 @@ namespace graphchi {
                         /* Initialize vertices */
                         assert(sub_interval_en + 1 >= sub_interval_st);
                         size_t nvertices = sub_interval_en - sub_interval_st + 1;
-                        graphchi_edge<EdgeDataType> * edata = NULL;
-                        
                         std::vector<svertex_t> vertices(nvertices, svertex_t());
                         logstream(LOG_DEBUG) << "Allocation " << nvertices << " vertices, sizeof:" << sizeof(svertex_t)
                         << " total:" << nvertices * sizeof(svertex_t) << std::endl;
-                        init_vertices(vertices, edata);
+                        init_vertices(vertices);
                         
                         /* Load data */
                         load_before_updates(vertices);                        
@@ -921,13 +909,6 @@ namespace graphchi {
                             save_vertices(vertices);
                         }
                         sub_interval_st = sub_interval_en + 1;
-                        
-                        /* Delete edge buffer. TODO: reuse. */
-                        if (edata != NULL) {
-                            free(edata);
-                            edata = NULL;
-                        }
-                       
                     } // while subintervals
 
                     if (memoryshard->loaded() && (save_edgesfiles_after_inmemmode || !is_inmemory_mode())) {
@@ -1122,8 +1103,8 @@ namespace graphchi {
                 std::string dirname = dirname_shard_edata_block(edatashardname, blocksize);
                 size_t edatasize = get_shard_edata_filesize<ET>(edatashardname);
                 logstream(LOG_INFO) << "Clearing data: " << edatashardname << " bytes: " << edatasize << std::endl;
-                int nblocks = (size_t) ((edatasize / blocksize) + (edatasize % blocksize == 0 ? 0 : 1));
-                for(int i=0; i < nblocks; i++) {
+                size_t nblocks = (size_t) ((edatasize / blocksize) + (edatasize % blocksize == 0 ? 0 : 1));
+                for(size_t i=0; i < nblocks; i++) {
                     std::string block_filename = filename_shard_edata_block(edatashardname, i, blocksize);
                     size_t len = (size_t) std::min(edatasize - i * blocksize, blocksize);
                     int f = open(block_filename.c_str(), O_RDWR | O_CREAT, S_IROTH | S_IWOTH | S_IWUSR | S_IRUSR);

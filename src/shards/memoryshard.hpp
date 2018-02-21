@@ -387,7 +387,7 @@ namespace graphchi {
             
             assert(adjdata != NULL);
             
-            int nblocks = (int) (edatafilesize / blocksize + (edatafilesize % blocksize != 0));
+            size_t nblocks = (size_t) (edatafilesize / blocksize + (edatafilesize % blocksize != 0));
            
             bool setoffset = false;
             bool setrangeoffset = false;

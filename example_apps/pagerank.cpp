@@ -77,7 +77,7 @@ struct PagerankProgram : public GraphChiProgram<VertexDataType, EdgeDataType> {
                The initialization is important,
                because on every run, GraphChi will modify the data in the edges on disk. 
              */
-            for(int i=0; i < v.num_outedges(); i++) {
+            for(size_t i=0; i < v.num_outedges(); i++) {
                 graphchi_edge<float> * edge = v.outedge(i);
                 edge->set_data(1.0 / v.num_outedges());
             }
@@ -85,7 +85,7 @@ struct PagerankProgram : public GraphChiProgram<VertexDataType, EdgeDataType> {
         } else {
             /* Compute the sum of neighbors' weighted pageranks by
                reading from the in-edges. */
-            for(int i=0; i < v.num_inedges(); i++) {
+            for(size_t i=0; i < v.num_inedges(); i++) {
                 float val = v.inedge(i)->get_data();
                 sum += val;                    
             }
@@ -97,7 +97,7 @@ struct PagerankProgram : public GraphChiProgram<VertexDataType, EdgeDataType> {
                each of my out-edges. */
             if (v.num_outedges() > 0) {
                 float pagerankcont = pagerank / v.num_outedges();
-                for(int i=0; i < v.num_outedges(); i++) {
+                for(size_t i=0; i < v.num_outedges(); i++) {
                     graphchi_edge<float> * edge = v.outedge(i);
                     edge->set_data(pagerankcont);
                 }
@@ -126,20 +126,20 @@ struct PagerankProgramInmem : public GraphChiProgram<VertexDataType, EdgeDataTyp
     void update(graphchi_vertex<VertexDataType, EdgeDataType> &v, graphchi_context &ginfo) {
         if (ginfo.iteration > 0) {
             float sum=0;
-            for(int i=0; i < v.num_inedges(); i++) {
+            for(size_t i=0; i < v.num_inedges(); i++) {
               sum += pr[v.inedge(i)->vertexid];
             }
-            if (v.outc > 0) {
-                pr[v.id()] = (RANDOMRESETPROB + (1 - RANDOMRESETPROB) * sum) / v.outc;
+            if (v.num_outedges() > 0) {
+                pr[v.id()] = (RANDOMRESETPROB + (1 - RANDOMRESETPROB) * sum) / v.num_outedges();
             } else {
                 pr[v.id()] = (RANDOMRESETPROB + (1 - RANDOMRESETPROB) * sum);
             }
         } else if (ginfo.iteration == 0) {
-            if (v.outc > 0) pr[v.id()] = 1.0f / v.outc;
+            if (v.num_outedges() > 0) pr[v.id()] = 1.0f / v.num_outedges();
         }
         if (ginfo.iteration == ginfo.num_iterations - 1) {
             /* On last iteration, multiply pr by degree and store the result */
-            v.set_data(v.outc > 0 ? pr[v.id()] * v.outc : pr[v.id()]);
+            v.set_data(v.num_outedges() > 0 ? pr[v.id()] * v.num_outedges() : pr[v.id()]);
         }
     }
     
