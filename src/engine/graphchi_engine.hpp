@@ -546,8 +546,8 @@ namespace graphchi {
             size_t ecounter = 0;
             for(size_t i=0; i < nvertices; i++) {
                 degree d = degree_handler->get_degree(sub_interval_st + i);
-                int inc = d.indegree;
-                int outc = d.outdegree;
+                size_t inc = d.indegree;
+                size_t outc = d.outdegree;
                 vertices[i] = svertex_t(sub_interval_st + i, inc, outc, disable_outedges);
                 
                 if (scheduler != NULL) {
@@ -570,10 +570,9 @@ namespace graphchi {
         
         void save_vertices(std::vector<svertex_t> &vertices) {
             if (disable_vertexdata_storage) return;
-            size_t nvertices = vertices.size();
             bool modified_any_vertex = false;
-            for(int i=0; i < (int)nvertices; i++) {
-                if (vertices[i].modified) {
+            for (const auto& v: vertices) {
+                if (v.modified) {
                     modified_any_vertex = true;
                     break;
                 }

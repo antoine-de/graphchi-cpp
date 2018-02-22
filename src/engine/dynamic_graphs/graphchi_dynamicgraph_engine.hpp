@@ -445,8 +445,8 @@ namespace graphchi {
             int max_interval = maxvid - fromvid;
             for(int i=0; i < max_interval; i++) {
                 degree deg = this->degree_handler->get_degree(fromvid + i);
-                int inc = deg.indegree;
-                int outc = deg.outdegree;
+                size_t inc = deg.indegree;
+                size_t outc = deg.outdegree;
                 
                 // Raw data and object cost included
                 memreq += sizeof(svertex_t) + (sizeof(EdgeDataType) + sizeof(vid_t) + 

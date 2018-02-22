@@ -149,7 +149,7 @@ namespace graphchi {
             }
         }  
         
-        virtual void set_degree(vid_t vertexid, int indegree, int outdegree) {
+        virtual void set_degree(vid_t vertexid, size_t indegree, size_t outdegree) {
             modified = true;
             if (!use_mmap) {
                 assert(vertexid >= vertex_st && vertexid <= vertex_en);

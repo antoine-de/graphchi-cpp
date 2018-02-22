@@ -174,7 +174,7 @@ namespace graphchi {
         sblock * curadjblock;
         metrics &m;
         
-        std::map<vid_t, indexentry> sparse_index; // Sparse index that can be created in the fly
+        std::map<long, indexentry> sparse_index; // Sparse index that can be created in the fly
         bool disable_writes;
         bool async_edata_loading;
         bool disable_async_writes;
@@ -249,7 +249,7 @@ namespace graphchi {
         void initdata() {
             logstream(LOG_DEBUG) << "Initialize edge data: " << filename_edata << std::endl;
             ET * initblock = (ET *) malloc(blocksize);
-            for(int i=0; i < (int) (blocksize/sizeof(ET)); i++) initblock[i] = ET();
+            for(size_t i=0; i < (size_t) (blocksize/sizeof(ET)); i++) initblock[i] = ET();
             for(size_t off=0; off < edatafilesize; off += blocksize) {
                 std::string blockfilename = filename_shard_edata_block(filename_edata, (int) (off / blocksize), blocksize);
                 size_t len = std::min(blocksize, edatafilesize - off);
@@ -267,18 +267,18 @@ namespace graphchi {
         void save_offset() {
             // Note, so that we can use the lower bound operation in map, we need
             // to insert indices in reverse order
-            sparse_index.insert(std::pair<vid_t, indexentry>(-((vid_t)curvid), indexentry(adjoffset, edataoffset)));
+            sparse_index.insert(std::pair<long, indexentry>(-((long)curvid), indexentry(adjoffset, edataoffset)));
         }
         
         void move_close_to(vid_t v) {
             if (curvid >= v) return;
             
-            std::map<vid_t,indexentry>::iterator lowerbd_iter = sparse_index.lower_bound(-v);
-            vid_t closest_vid = -(lowerbd_iter->first);
+            std::map<long,indexentry>::iterator lowerbd_iter = sparse_index.lower_bound(-((long)v)); 
+            long closest_vid = -(lowerbd_iter->first);
             assert(closest_vid>=0);
             indexentry closest_offset = lowerbd_iter->second;
-            assert(closest_vid <= v);
-            if (closest_vid > curvid) {
+            assert(closest_vid <= (long)v);
+            if (closest_vid > (long)curvid) {
                 logstream(LOG_DEBUG)
                 << "Sliding shard, start: " << range_st << " moved to: " << closest_vid << " " << closest_offset.adjoffset << ", asked for : " << v << " was in: curvid= " << curvid  << " " << adjoffset << std::endl;
                 
@@ -413,7 +413,7 @@ namespace graphchi {
                 // TODO: skip unscheduled vertices.
                 
                 int64_t n;
-                if (record_index && (size_t)(curvid - lastrec) >= (size_t) std::max((vid_t)100000, nvecs/16)) {
+                if (record_index && (size_t)(curvid - lastrec) >= (size_t) std::max(100000ul, nvecs/16)) {
                     save_offset();
                     lastrec = curvid;
                 }

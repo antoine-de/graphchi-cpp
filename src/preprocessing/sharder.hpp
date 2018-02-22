@@ -298,7 +298,7 @@ namespace graphchi {
         size_t nedges;
         std::string prefix;
 
-        int compressed_block_size;
+        long compressed_block_size;
 
         int * bufptrs;
         size_t bufsize;
@@ -481,7 +481,8 @@ namespace graphchi {
 
         template <typename T>
         void edata_flush(char * buf, char * bufptr, std::string & shard_filename, size_t totbytes) {
-            int len = (int) (bufptr - buf);
+            assert(bufptr > buf);
+            size_t len = bufptr - buf;
 
             m.start_time("edata_flush");
 
@@ -637,7 +638,7 @@ namespace graphchi {
 
             m.start_time("finish_shard.sort");
 #ifndef DYNAMICEDATA
-            iSort(shovelbuf, (int)numedges, max_vertex_id, srcF<EdgeDataType>());
+            iSort(shovelbuf, numedges, max_vertex_id, srcF<EdgeDataType>());
 #else
             quickSort(shovelbuf, numedges, edge_t_src_less<EdgeDataType>);
 #endif
@@ -806,12 +807,12 @@ namespace graphchi {
                     // Handle zeros
                     if (!edge.stopper()) {
                         if (edge.src - curvid > 1 || (i == 0 && edge.src>0)) {
-                            int nz = edge.src - curvid - 1;
+                            long nz = edge.src - curvid - 1;
                             if (i == 0 && edge.src > 0) nz = edge.src; // border case with the first one
                             do {
                                 bwrite<uint8_t>(f, buf, bufptr, 0);
                                 nz--;
-                                int tnz = std::min(254, nz);
+                                auto tnz = std::min(254L, nz);
                                 bwrite<uint8_t>(f, buf, bufptr, (uint8_t) tnz);
                                 nz -= tnz;
                             } while (nz>0);
@@ -982,7 +983,7 @@ namespace graphchi {
             merger.merge();
 
             // Delete sources
-            for(int i=0; i < (int)sources.size(); i++) {
+            for(size_t i=0; i < sources.size(); i++) {
                 delete (shovel_merge_source<EdgeDataType> *)sources[i];
             }
 
@@ -1029,7 +1030,7 @@ namespace graphchi {
             m.start_time("degrees.runtime");
 
             /* Initialize streaming shards */
-            int blocksize = compressed_block_size;
+            long blocksize = compressed_block_size;
 
             for(int p=0; p < nshards; p++) {
                 logstream(LOG_INFO) << "Initialize streaming shard: " << p << "[" << intervals[p].first << "-" << intervals[p].second << "]" <<std::endl;
@@ -1051,7 +1052,7 @@ namespace graphchi {
                 logstream(LOG_ERROR) << "Could not create: " << degreeOutF << std::endl;
             }
             assert(degreeOutF >= 0);
-            int trerr = ftruncate64(degreeOutF, ginfo.nvertices * sizeof(int) * 2);
+            int trerr = ftruncate64(degreeOutF, ginfo.nvertices * sizeof(vid_t) * 2);
             assert(trerr == 0);
             if (trerr != 0) {
                 logstream(LOG_FATAL) << "Could not truncate!" << std::endl;
@@ -1073,13 +1074,8 @@ namespace graphchi {
                 memshard.only_adjacency = true;
                 logstream(LOG_INFO) << "Interval: " << interval_st << " " << interval_en << std::endl;
 
-                for(vid_t subinterval_st = interval_st; subinterval_st <= interval_en; ) {
-
-                    vid_t subinterval_en = subinterval_st + subwindow;
-                    logstream(LOG_INFO) << "First sub-window max: " << subinterval_en << std::endl;
-
-                    if (subinterval_en > interval_en) subinterval_en = interval_en;
-                    logstream(LOG_INFO) << "Verified sub-window max: " << subinterval_en << std::endl;
+                for(vid_t subinterval_st=interval_st; subinterval_st <= interval_en; ) { 
+                    vid_t subinterval_en = std::min(interval_en, subinterval_st + subwindow); 
 
                     logstream(LOG_INFO) << "(Degree proc.) Sub-window: [" << subinterval_st << " - " << subinterval_en << "]" << std::endl;
                     assert(subinterval_en >= subinterval_st && subinterval_en <= interval_en);
