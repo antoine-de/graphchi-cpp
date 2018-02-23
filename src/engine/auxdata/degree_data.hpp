@@ -43,8 +43,8 @@ namespace graphchi {
     
     
     struct degree {
-        size_t indegree;
-        size_t outdegree;
+        long indegree;
+        long outdegree;
     };
     
     

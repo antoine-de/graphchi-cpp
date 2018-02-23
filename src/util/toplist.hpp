@@ -77,7 +77,7 @@ namespace graphchi {
         stripedio * iomgr = new stripedio(m);
         
         /* Initialize the vertex-data reader */
-        vid_t readwindow = 1024 * 1024;
+        vid_t readwindow = 1024 * 1024 * 100;
         size_t numvertices = get_num_vertices(basefilename);
         vertex_data_store<VertexDataType> * vertexdata =
         new vertex_data_store<VertexDataType>(basefilename, numvertices, iomgr);
@@ -96,7 +96,7 @@ namespace graphchi {
         vid_t st = 0;
         vid_t en = numvertices - 1;
 
-        int count = 0;
+        unsigned long count = 0;
         while(st <= numvertices - 1) {
             en = st + readwindow - 1;
             if (en >= numvertices - 1) en = numvertices - 1;

@@ -146,8 +146,8 @@ namespace graphchi {
     class internal_graphchi_vertex {
         
     public:   // Todo, use friend
-        volatile int inc;
-        volatile int outc;
+        size_t inc;
+        size_t outc;
         
         vid_t vertexid;
 
@@ -181,8 +181,8 @@ namespace graphchi {
         
         internal_graphchi_vertex(vid_t _id, graphchi_edge<EdgeDataType> * iptr, 
                                 graphchi_edge<EdgeDataType> * optr, 
-                                 int indeg, 
-                                 int outdeg) : 
+                                 size_t indeg, 
+                                 size_t outdeg) : 
                             vertexid(_id), inedges_ptr(iptr), outedges_ptr(optr) {
             inc = 0;
             outc = 0;
@@ -203,14 +203,14 @@ namespace graphchi {
             return vertexid;
         }
         
-        int num_inedges() const { 
+        long num_inedges() const { 
             return inc; 
             
         }
-        int num_outedges() const { 
+        long num_outedges() const { 
             return outc; 
         }
-        int num_edges() const { 
+        long num_edges() const { 
             return inc + outc; 
         }
 
@@ -226,9 +226,9 @@ namespace graphchi {
                 return;
             }
 #endif
-            int i = __sync_add_and_fetch(&inc, 1);
+            size_t i = __sync_add_and_fetch(&inc, 1ul);
             if (inedges_ptr != NULL)
-                inedges_ptr[i - 1] = graphchi_edge<EdgeDataType>(src, ptr);
+            	inedges_ptr[i - 1] = graphchi_edge<EdgeDataType>(src, ptr);
             
             assert(src != vertexid);
           /*  if(inedges_ptr != NULL && inc > outedges_ptr - inedges_ptr) {
@@ -244,7 +244,7 @@ namespace graphchi {
                 return;
             }
 #endif
-            int i = __sync_add_and_fetch(&outc, 1);
+            size_t i = __sync_add_and_fetch(&outc, 1);
             if (outedges_ptr != NULL) outedges_ptr[i - 1] = graphchi_edge<EdgeDataType>(dst, ptr);
             assert(dst != vertexid);
         }
@@ -262,8 +262,8 @@ namespace graphchi {
         graphchi_vertex(vid_t _id, 
                         graphchi_edge<EdgeDataType> * iptr, 
                                  graphchi_edge<EdgeDataType> * optr, 
-                        int indeg, 
-                        int outdeg) : 
+                        size_t indeg, 
+                        size_t outdeg) : 
             internal_graphchi_vertex<VertexDataType, EdgeDataType>(_id, iptr, optr, indeg, outdeg) {}
         
         virtual ~graphchi_vertex() {}
@@ -272,25 +272,25 @@ namespace graphchi {
           * Returns ith edge of a vertex, ignoring 
           * edge direction.
           */
-        graphchi_edge<EdgeDataType> * edge(int i) {
+        graphchi_edge<EdgeDataType> * edge(size_t i) {
             if (i < this->inc) return inedge(i);
             else return outedge(i - this->inc);
         }
 
         
-        graphchi_edge<EdgeDataType> * inedge(int i) {
+        graphchi_edge<EdgeDataType> * inedge(size_t i) {
             assert(i >= 0 && i < this->inc);
             return &this->inedges_ptr[i];
         }
         
-        graphchi_edge<EdgeDataType> * outedge(int i) {
+        graphchi_edge<EdgeDataType> * outedge(size_t i) {
             assert(i >= 0 && i < this->outc);
             return &this->outedges_ptr[i];
         }        
         
         graphchi_edge<EdgeDataType> * random_outedge() {
             if (this->outc == 0) return NULL;
-            return outedge((int) (std::abs(random()) % this->outc));
+            return outedge((size_t) (std::abs(random()) % this->outc));
         }
             
         /** 
@@ -313,7 +313,6 @@ namespace graphchi {
           * stored on disk.
           */
         virtual void set_data(VertexDataType d) {
-            std::cout << "update data" <<std::endl;
             *(this->dataptr) = d;
             this->modified = true;
         }
@@ -339,7 +338,7 @@ namespace graphchi {
                 memmove(&this->inedges_ptr[this->inc], this->outedges_ptr, this->outc * sizeof(graphchi_edge<EdgeDataType>));
                 this->outedges_ptr = &this->inedges_ptr[this->inc];
             }
-            quickSort(this->inedges_ptr, (int) (this->inc + this->outc), eptr_less<EdgeDataType>);
+            quickSort(this->inedges_ptr, (size_t) (this->inc + this->outc), eptr_less<EdgeDataType>);
             
         }
         

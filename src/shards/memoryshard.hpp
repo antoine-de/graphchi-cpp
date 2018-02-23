@@ -403,9 +403,9 @@ namespace graphchi {
                 uint8_t * ptr = adjdata + index[chunk].filepos;
                 uint8_t * end = adjdata + (chunk < index.size() - 1 ? index[chunk + 1].filepos :  adjfilesize);
                 vid_t vid = index[chunk].vertexid;
-                vid_t viden = (chunk < (int) index.size() - 1 ? index[chunk + 1].vertexid : std::numeric_limits<vid_t>::max());
+                vid_t viden = (chunk < index.size() - 1 ? index[chunk + 1].vertexid : std::numeric_limits<vid_t>::max());
                 size_t edgeptr = index[chunk].edgecounter * sizeof(ET);
-                size_t edgeptr_end =  (chunk < (int) index.size() - 1 ? index[chunk + 1].edgecounter * sizeof(ET) : edatafilesize);
+                size_t edgeptr_end =  (chunk < index.size() - 1 ? index[chunk + 1].edgecounter * sizeof(ET) : edatafilesize);
 
                 bool contains_range_end = vid < range_end && viden > range_end;
                 bool contains_range_st = vid <= range_st && viden > range_st;

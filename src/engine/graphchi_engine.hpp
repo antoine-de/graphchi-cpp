@@ -196,7 +196,7 @@ namespace graphchi {
             enable_deterministic_parallelism = true;
             load_threads = get_option_int("loadthreads", 2);
             exec_threads = get_option_int("execthreads", omp_get_max_threads());
-            maxwindow = 40000000;
+            maxwindow = 50000000;
 
             /* Load graph shard interval information */
             _load_vertex_intervals();
@@ -316,8 +316,8 @@ namespace graphchi {
                 long max_interval = maxvid - fromvid;
                 for(long i=0; i < max_interval; i++) {
                     degree deg = degree_handler->get_degree(fromvid + i);
-                    int inc = deg.indegree;
-                    int outc = deg.outdegree * (!disable_outedges);
+                    size_t inc = deg.indegree;
+                    size_t outc = deg.outdegree * (!disable_outedges);
                     
                     // Raw data and object cost included
                     memreq += sizeof(svertex_t) + (sizeof(EdgeDataType) + sizeof(vid_t) + sizeof(graphchi_edge<EdgeDataType>))*(outc + inc);
@@ -543,8 +543,8 @@ namespace graphchi {
             size_t ecounter = 0;
             for(long i=0; i < nvertices; i++) {
                 degree d = degree_handler->get_degree(sub_interval_st + i);
-                int inc = d.indegree;
-                int outc = d.outdegree * (!disable_outedges);
+                size_t inc = d.indegree;
+                size_t outc = d.outdegree * (!disable_outedges);
                 vertices[i] = svertex_t(sub_interval_st + i, &edata[ecounter], 
                                         &edata[ecounter + inc * store_inedges], inc, outc);
                 
@@ -728,7 +728,7 @@ namespace graphchi {
             
             if (svertex_t().computational_edges()) {
                 // Heuristic
-                set_maxwindow(membudget_mb * 1024 * 1024 / 3 / 100);
+                set_maxwindow(membudget_mb * 1024 * 5);
                 logstream(LOG_INFO) << "Set maxwindow:" << maxwindow << std::endl;
             }
             
