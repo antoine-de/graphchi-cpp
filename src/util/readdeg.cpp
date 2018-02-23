@@ -17,6 +17,8 @@ struct degree {
 int main(int argc, const char ** argv) {
     FILE * f = fopen(argv[1], "r");
     
+    std::cout << sizeof(int) << " " << sizeof(long) << std::endl;
+    std::cout << sizeof(int32_t) << " " << sizeof(size_t) << std::endl;
     int wanted = atoi(argv[2]);
     size_t nout = 0;
     size_t nin = 0;

@@ -148,6 +148,7 @@ namespace graphchi {
     public:   // Todo, use friend
         size_t inc;
         size_t outc;
+        size_t real_inc;
         
         vid_t vertexid;
 
@@ -184,6 +185,7 @@ namespace graphchi {
                                  size_t indeg, 
                                  size_t outdeg) : 
                             vertexid(_id), inedges_ptr(iptr), outedges_ptr(optr) {
+            real_inc = indeg;
             inc = 0;
             outc = 0;
             scheduled = false;
@@ -227,6 +229,10 @@ namespace graphchi {
             }
 #endif
             size_t i = __sync_add_and_fetch(&inc, 1ul);
+            if (i > real_inc) {
+                printf("overflow the inedges_ptr array (%lu): %lu > %lu\n", vertexid, i, real_inc);
+                return;
+            }
             if (inedges_ptr != NULL)
             	inedges_ptr[i - 1] = graphchi_edge<EdgeDataType>(src, ptr);
             
