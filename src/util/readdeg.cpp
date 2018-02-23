@@ -10,8 +10,8 @@
 #include <fstream>
 
 struct degree {
-    int indegree;
-    int outdegree;
+    size_t indegree;
+    size_t outdegree;
 };
 
 int main(int argc, const char ** argv) {
@@ -23,7 +23,7 @@ int main(int argc, const char ** argv) {
     size_t nonz = 0;
     size_t tot = 0;
     degree d;
-    int j = 0;
+    size_t j = 0;
     while(!feof(f)) {
         fread(&d, sizeof(degree), 1, f);
         nout += d.outdegree;
