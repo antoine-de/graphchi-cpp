@@ -174,7 +174,7 @@ namespace graphchi {
         sblock * curadjblock;
         metrics &m;
         
-        std::map<int, indexentry> sparse_index; // Sparse index that can be created in the fly
+        std::map<int64_t, indexentry> sparse_index; // Sparse index that can be created in the fly
         bool disable_writes;
         bool async_edata_loading;
         bool disable_async_writes;
@@ -267,18 +267,18 @@ namespace graphchi {
         void save_offset() {
             // Note, so that we can use the lower bound operation in map, we need
             // to insert indices in reverse order
-            sparse_index.insert(std::pair<int, indexentry>(-((int)curvid), indexentry(adjoffset, edataoffset)));
+            sparse_index.insert(std::pair<int64_t, indexentry>(-((int64_t)curvid), indexentry(adjoffset, edataoffset)));
         }
         
         void move_close_to(vid_t v) {
             if (curvid >= v) return;
             
-            std::map<int,indexentry>::iterator lowerbd_iter = sparse_index.lower_bound(-((int)v));
-            int closest_vid = -((int)lowerbd_iter->first);
+            std::map<int64_t,indexentry>::iterator lowerbd_iter = sparse_index.lower_bound(-((int64_t)v));
+            int64_t closest_vid = -((int64_t)lowerbd_iter->first);
             assert(closest_vid>=0);
             indexentry closest_offset = lowerbd_iter->second;
-            assert(closest_vid <= (int)v);
-            if (closest_vid > (int)curvid) {   /* Note: this will fail if we have over 2B vertices! */
+            assert(closest_vid <= (int64_t)v);
+            if (closest_vid > (int64_t)curvid) {
                 logstream(LOG_DEBUG)
                 << "Sliding shard, start: " << range_st << " moved to: " << closest_vid << " " << closest_offset.adjoffset << ", asked for : " << v << " was in: curvid= " << curvid  << " " << adjoffset << std::endl;
                 
@@ -406,7 +406,7 @@ namespace graphchi {
             vid_t lastrec = start;
             window_start_edataoffset = edataoffset;
             
-            for(int i=((int)curvid) - ((int)start); i<nvecs; i++) {
+            for(int i=(int)(curvid - start); i<nvecs; i++) {
                 if (adjoffset >= adjfilesize) break;
                 
                 // TODO: skip unscheduled vertices.

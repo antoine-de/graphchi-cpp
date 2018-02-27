@@ -23,7 +23,7 @@
 
 namespace graphchi {
     
-    typedef uint32_t vid_t;
+    typedef uint64_t vid_t;
     
     
     /** 

@@ -108,16 +108,15 @@ namespace graphchi {
         return val;
     }
     
-    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int val);
-    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int val) {
-        return 0xffffffff == (unsigned int)val;
+    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int32_t val);
+    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(int32_t val) {
+        return 0x0fffffff == val;
     }
-    
-    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(vid_t val);
-    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(vid_t val) {
+
+    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(uint32_t val);
+    static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(uint32_t val) {
         return 0xffffffffu == val;
     }
-    
     
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(float val);
     static inline bool VARIABLE_IS_NOT_USED is_deleted_edge_value(float val) {
@@ -129,16 +128,16 @@ namespace graphchi {
         e->set_data(true);
     }
     
-    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<vid_t> * e);
-    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<vid_t> * e) {
-        e->set_data(0xffffffff);
+    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int32_t> * e);
+    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int32_t> * e) {
+        e->set_data(0x0fffffff);
     }
-    
-    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int> * e);
-    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<int> * e) {
-        e->set_data(0xffffffff);
+
+    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<uint32_t> * e);
+    static void VARIABLE_IS_NOT_USED remove_edgev(graphchi_edge<uint32_t> * e) {
+        e->set_data(0xffffffffu);
     }
-    
+
 #endif  
     
     
