@@ -104,7 +104,7 @@ struct PagerankProgram : public GraphChiProgram<VertexDataType, EdgeDataType> {
             std::stringstream ss;
             ss << "rank" << i;
             std::stringstream sv;
-            sv << vv.vertex << ":" << getname(vv.vertex) << ":" << vv.value<< "";
+            sv << vv.vertex << ":" << vv.vertex << ":" << vv.value<< "";
             dyngraph_engine->set_json(ss.str(), sv.str());
         }         
 #endif
@@ -265,9 +265,9 @@ void * dynamic_graph_reader(void * info) {
         char delims[] = "\t ";	
         char * t;
         t = strtok(s, delims);
-        from = atoi(t);
+        from = atoll(t);
         t = strtok(NULL, delims);
-        to = atoi(t);
+        to = atoll(t);
         
         if (from == to) {
             // logstream(LOG_WARNING) << "Self-edge in stream: " << from << " <-> " << to << std::endl;
@@ -304,7 +304,7 @@ void * dynamic_graph_reader(void * info) {
         
     } 
     fclose(f);
-    dyngraph_engine->finish_after_iters(10);
+    dyngraph_engine->finish_after_iters(4);
     return NULL;
 }
 
