@@ -38,38 +38,38 @@ namespace graphchi {
             memset(array, 0xff,  arrlen * sizeof(size_t));
         }
         
-        inline bool get(uint32_t b) const{
-            uint32_t arrpos, bitpos;
+        inline bool get(vid_t b) const{
+            vid_t arrpos, bitpos;
             bit_to_pos(b, arrpos, bitpos);
             return array[arrpos] & (size_t(1) << size_t(bitpos));
         }
         
         //! Set the bit returning the old value
-        inline bool set_bit(uint32_t b) {
+        inline bool set_bit(vid_t b) {
             // use CAS to set the bit
-            uint32_t arrpos, bitpos;
+            vid_t arrpos, bitpos;
             bit_to_pos(b, arrpos, bitpos);
             const size_t mask(size_t(1) << size_t(bitpos)); 
             return __sync_fetch_and_or(array + arrpos, mask) & mask;
         }
         
         //! Set the state of the bit returning the old value
-        inline bool set(uint32_t b, bool value) {
+        inline bool set(vid_t b, bool value) {
             if (value) return set_bit(b);
             else return clear_bit(b);
         }
         
         //! Clear the bit returning the old value
-        inline bool clear_bit(uint32_t b) {
+        inline bool clear_bit(vid_t b) {
             // use CAS to set the bit
-            uint32_t arrpos, bitpos;
+            vid_t arrpos, bitpos;
             bit_to_pos(b, arrpos, bitpos);
             const size_t test_mask(size_t(1) << size_t(bitpos)); 
             const size_t clear_mask(~test_mask); 
             return __sync_fetch_and_and(array + arrpos, clear_mask) & test_mask;
         }
         
-        inline void clear_bits(uint32_t fromb, uint32_t tob) { // tob is inclusive
+        inline void clear_bits(vid_t fromb, vid_t tob) { // tob is inclusive
             // Careful with alignment
             const size_t bitsperword = sizeof(size_t)*8;
             while((fromb%bitsperword != 0)) {
@@ -85,8 +85,8 @@ namespace graphchi {
             }
             clear_bit(tob);
 
-            uint32_t from_arrpos = fromb / (8 * (int) sizeof(size_t));
-            uint32_t to_arrpos = tob / (8 * (int)  sizeof(size_t)); 
+            vid_t from_arrpos = fromb / (8 * (int) sizeof(size_t));
+            vid_t to_arrpos = tob / (8 * (int)  sizeof(size_t)); 
             memset(&array[from_arrpos], 0, (to_arrpos-from_arrpos) * (int)  sizeof(size_t));
         }
         
@@ -98,7 +98,7 @@ namespace graphchi {
     private:
                 
         
-        inline static void bit_to_pos(uint32_t b, uint32_t &arrpos, uint32_t &bitpos) {
+        inline static void bit_to_pos(vid_t b, vid_t &arrpos, vid_t &bitpos) {
             // the compiler better optimize this...
             arrpos = b / (8 * (int)sizeof(size_t));
             bitpos = b & (8 * (int)sizeof(size_t) - 1);
@@ -114,7 +114,7 @@ namespace graphchi {
         }
         
         // returns 0 on failure
-        inline size_t next_bit_in_block(const uint32_t &b, const size_t &block) {
+        inline size_t next_bit_in_block(const vid_t &b, const size_t &block) {
             // use CAS to set the bit
             size_t x = block & below_selectedbit[b] ;
             if (x == 0) return 0;
@@ -131,8 +131,8 @@ namespace graphchi {
         size_t* array;
         size_t len;
         size_t arrlen;
-        // selectbit[i] has a bit in the i'th position
         size_t selectbit[8 * sizeof(size_t)];
+        // selectbit[i] has a bit in the i'th position
         size_t notselectbit[8 * sizeof(size_t)];
         size_t below_selectedbit[8 * sizeof(size_t)];
     };

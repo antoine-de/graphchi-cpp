@@ -285,7 +285,7 @@ namespace graphchi {
         virtual void initialize_scheduler() {
             if (use_selective_scheduling) {
                 if (scheduler != NULL) delete scheduler;
-                scheduler = new bitset_scheduler((int) num_vertices());
+                scheduler = new bitset_scheduler(num_vertices());
                 scheduler->add_task_to_all();
             } else {
                 scheduler = NULL;

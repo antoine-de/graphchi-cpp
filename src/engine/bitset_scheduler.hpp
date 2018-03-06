@@ -42,7 +42,7 @@ namespace graphchi {
     public:
         bool has_new_tasks;
         
-        bitset_scheduler(int nvertices) {
+        bitset_scheduler(vid_t nvertices) {
             curiteration_bitset = new dense_bitset(nvertices);
             nextiteration_bitset = new dense_bitset(nvertices);
         }
